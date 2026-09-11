@@ -14,6 +14,7 @@ import AdminTeamView from '../views/AdminTeamView.vue'
 import AdminProfileView from '../views/AdminProfileView.vue'
 
 import { supabase } from '../lib/supabase'
+
 const router = createRouter({
   history: createWebHistory(),
 
@@ -28,60 +29,50 @@ const router = createRouter({
       path: '/home',
       name: 'home',
       component: HomeView,
-      meta: {
-        role: 'employee',
-      },
+      meta: { role: 'employee' },
     },
 
     {
       path: '/month',
       name: 'month',
       component: MonthView,
-      meta: {
-        role: 'employee',
-      },
+      meta: { role: 'employee' },
     },
 
     {
       path: '/hours',
       name: 'hours',
       component: HoursView,
-      meta: {
-        role: 'employee',
-      },
+      meta: { role: 'employee' },
     },
 
     {
       path: '/profile',
       name: 'profile',
       component: ProfileView,
-      meta: {
-        role: 'employee',
-      },
+      meta: { role: 'employee' },
     },
 
     {
       path: '/admin',
       name: 'admin',
       component: AdminHomeView,
-      meta: {
-        role: 'admin',
-      },
+      meta: { role: 'admin' },
     },
+
     {
-  path: '/admin/profile',
-  name: 'admin-profile',
-  component: AdminProfileView,
-  meta: {
-    role: 'admin',
-  },
-},
-{
-  path: '/admin/equipe',
-  name: 'admin-team',
-  component: AdminTeamView,
-  meta: { role: 'admin' },
-},
+      path: '/admin/equipe',
+      name: 'admin-team',
+      component: AdminTeamView,
+      meta: { role: 'admin' },
+    },
+
+    {
+      path: '/admin/profile',
+      name: 'admin-profile',
+      component: AdminProfileView,
+      meta: { role: 'admin' },
+    },
   ],
 })
 
@@ -90,10 +81,6 @@ router.beforeEach(async (to) => {
     data: { session },
   } = await supabase.auth.getSession()
 
-  /* -------------------------
-     PAS CONNECTÉ
-  ------------------------- */
-
   if (!session) {
     if (to.path !== '/') {
       return '/'
@@ -101,10 +88,6 @@ router.beforeEach(async (to) => {
 
     return true
   }
-
-  /* -------------------------
-     UTILISATEUR CONNECTÉ
-  ------------------------- */
 
   const user = session.user
 
@@ -124,15 +107,10 @@ router.beforeEach(async (to) => {
     )
 
     await supabase.auth.signOut()
-
     return '/'
   }
 
   const role = profile.role
-
-  /* -------------------------
-     PAGE LOGIN
-  ------------------------- */
 
   if (to.path === '/') {
     if (role === 'admin') {
@@ -142,20 +120,12 @@ router.beforeEach(async (to) => {
     return '/home'
   }
 
-  /* -------------------------
-     ADMIN
-  ------------------------- */
-
   if (
     to.meta.role === 'admin' &&
     role !== 'admin'
   ) {
     return '/home'
   }
-
-  /* -------------------------
-     EMPLOYÉ
-  ------------------------- */
 
   if (
     to.meta.role === 'employee' &&
