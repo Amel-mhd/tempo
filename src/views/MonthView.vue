@@ -161,27 +161,7 @@
 
     <!-- NAVIGATION -->
 
-    <nav class="bottom-nav">
-      <RouterLink to="/home" class="nav-item">
-        <span>⌂</span>
-        <small>Accueil</small>
-      </RouterLink>
-
-      <RouterLink to="/hours" class="nav-item">
-        <span>◫</span>
-        <small>Horaires</small>
-      </RouterLink>
-
-      <RouterLink to="/month" class="nav-item active">
-        <span>▦</span>
-        <small>Mon mois</small>
-      </RouterLink>
-
-      <RouterLink to="/profile" class="nav-item">
-        <span>○</span>
-        <small>Profil</small>
-      </RouterLink>
-    </nav>
+   <EmployeeBottomNav />
   </main>
 </template>
 
@@ -197,6 +177,7 @@ import {
   type TimeEntry,
 } from '../services/timeEntries'
 
+import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
 import { supabase } from '../lib/supabase'
 
 interface CalendarDay {
@@ -1004,65 +985,6 @@ const formatDate = (
 }
 
 /* NAV */
-
-.bottom-nav {
-  position: fixed;
-
-  left: 50%;
-  bottom: 16px;
-
-  width: calc(100% - 30px);
-  max-width: 460px;
-
-  transform: translateX(-50%);
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
-  padding: 8px;
-
-  background: rgba(255, 255, 255, 0.96);
-
-  border: 1px solid #ebe4df;
-  border-radius: 22px;
-}
-
-.nav-item {
-  min-height: 54px;
-
-  display: flex;
-  flex-direction: column;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 3px;
-
-  border: none;
-  border-radius: 15px;
-
-  background: transparent;
-
-  color: #8b8581;
-
-  text-decoration: none;
-
-  cursor: pointer;
-}
-
-.nav-item span {
-  font-size: 20px;
-}
-
-.nav-item small {
-  font-size: 11px;
-}
-
-.nav-item.active {
-  background: #f2e9e3;
-
-  color: #17372f;
-}
 
 @media (max-width: 380px) {
   .month-page {

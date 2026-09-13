@@ -5,7 +5,10 @@
     <section class="content">
       <div class="brand">
         <h1 class="logo">
-          Temp<span class="o">o<span class="needle"></span></span>
+          Temp<span class="o">
+            o
+            <span class="needle"></span>
+          </span>
         </h1>
 
         <p>VOTRE TEMPS COMPTE</p>
@@ -20,110 +23,114 @@
         </p>
       </div>
 
-      <form class="login-form" @submit.prevent="login">
-        <div class="field">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path
-              d="M4 6H20V18H4V6Z"
-              stroke="currentColor"
-              stroke-width="1.6"
-            />
-            <path
-              d="M4 7L12 13L20 7"
-              stroke="currentColor"
-              stroke-width="1.6"
-            />
-          </svg>
-
-          <input
-            v-model="email"
-            type="email"
-            placeholder="Adresse e-mail"
-            required
-          />
-        </div>
-
-        <div class="field">
-          <svg viewBox="0 0 24 24" fill="none">
-            <rect
-              x="6"
-              y="10"
-              width="12"
-              height="10"
-              rx="2"
-              stroke="currentColor"
-              stroke-width="1.6"
-            />
-
-            <path
-              d="M8 10V7C8 4.8 9.8 3 12 3C14.2 3 16 4.8 16 7V10"
-              stroke="currentColor"
-              stroke-width="1.6"
-            />
-          </svg>
-
-          <input
-            v-model="password"
-            :type="showPassword ? 'text' : 'password'"
-            placeholder="Mot de passe"
-            required
-          />
-
-          <button
-            type="button"
-            class="eye-button"
-            @click="showPassword = !showPassword"
-          >
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M2.5 12C4.5 8.5 7.8 6.5 12 6.5C16.2 6.5 19.5 8.5 21.5 12C19.5 15.5 16.2 17.5 12 17.5C7.8 17.5 4.5 15.5 2.5 12Z"
-                stroke="currentColor"
-                stroke-width="1.5"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="2.5"
-                stroke="currentColor"
-                stroke-width="1.5"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <button
-  type="submit"
-  class="login-button"
-  :disabled="loading"
+     <form
+  class="login-form"
+  @submit.prevent="login"
 >
-  <span>
+  <!-- EMAIL -->
+  <div class="field">
+    <label for="email">
+      Adresse e-mail
+    </label>
+
+    <input
+      id="email"
+      v-model="email"
+      type="email"
+      placeholder="nom@exemple.fr"
+      autocomplete="email"
+      required
+    />
+  </div>
+
+  <!-- MOT DE PASSE -->
+  <div class="field">
+    <label for="password">
+      Mot de passe
+    </label>
+
+    <div class="password-field">
+      <input
+        id="password"
+        v-model="password"
+        :type="showPassword ? 'text' : 'password'"
+        placeholder="Votre mot de passe"
+        autocomplete="current-password"
+        required
+      />
+
+      <button
+        type="button"
+        class="eye-button"
+        aria-label="Afficher ou masquer le mot de passe"
+        @click="showPassword = !showPassword"
+      >
+        <svg
+          v-if="!showPassword"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
+          />
+
+          <circle
+            cx="12"
+            cy="12"
+            r="3"
+          />
+        </svg>
+
+        <svg
+          v-else
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"
+          />
+
+          <circle
+            cx="12"
+            cy="12"
+            r="3"
+          />
+
+          <line
+            x1="4"
+            y1="4"
+            x2="20"
+            y2="20"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ERREUR -->
+  <p
+    v-if="errorMessage"
+    class="error-message"
+  >
+    {{ errorMessage }}
+  </p>
+
+  <!-- CONNEXION -->
+  <button
+    type="submit"
+    class="login-button"
+    :disabled="loading"
+  >
     {{ loading ? 'Connexion...' : 'Se connecter' }}
-  </span>
+  </button>
+</form>
 
-  <span v-if="!loading" class="arrow">
-    →
-  </span>
-</button>
+      <div class="signup-link">
+        <span>Pas encore de compte ?</span>
 
-<p
-  v-if="errorMessage"
-  class="login-error"
->
-  {{ errorMessage }}
-</p>
-
-        <a href="#" class="forgot">
-          Mot de passe oublié ?
-        </a>
-      </form>
-
-      <div class="motto">
-        <span class="small-line"></span>
-
-        <p>
-          MIEUX ORGANISER AUJOURD’HUI<br />
-          POUR UN DEMAIN PLUS SEREIN
-        </p>
+        <RouterLink to="/signup">
+          Créer mon compte
+        </RouterLink>
       </div>
     </section>
   </main>
@@ -215,6 +222,26 @@ const login = async () => {
   font-size: 12px;
 
   color: #b14f42;
+}
+
+.signup-link {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+
+  margin-top: 18px;
+
+  font-size: 12px;
+
+  color: #8b8581;
+}
+
+.signup-link a {
+  font-weight: 700;
+
+  color: #a85f49;
+
+  text-decoration: none;
 }
 
 .login-button:disabled {
@@ -370,26 +397,56 @@ const login = async () => {
   color: #97918d;
 }
 
-.eye-button {
-  width: 34px;
-  height: 34px;
+.password-field {
+  position: relative;
+  width: 100%;
+}
 
-  display: grid;
-  place-items: center;
+.password-field input {
+  width: 100%;
+  padding-right: 52px;
+}
+
+.field label {
+  white-space: nowrap;
+}
+
+.eye-button {
+  position: absolute;
+
+  top: 50%;
+  right: 16px;
+
+  transform: translateY(-50%);
+
+  width: 30px;
+  height: 30px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   padding: 0;
 
-  border: none;
-  background: transparent;
+  border: 0;
 
+  background: transparent;
   color: #17372f;
 
   cursor: pointer;
 }
 
 .eye-button svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
+
+  display: block;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .login-button {

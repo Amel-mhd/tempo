@@ -1,610 +1,196 @@
 <template>
-  <main class="admin-page">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Administration</p>
-        <h1>Équipe</h1>
-        <p class="subtitle">
-          Gérez les employées, leurs sociétés et leurs heures.
-        </p>
-      </div>
-
-      <RouterLink to="/admin/profile" class="profile-button">
-        <span class="profile-icon">
-          {{ firstName.charAt(0).toUpperCase() || 'N' }}
-        </span>
-        <span>Profil</span>
-      </RouterLink>
-    </header>
-
-    <section class="month-section">
-      <p class="eyebrow">Période</p>
-      <div class="month-picker">
-        <button type="button" class="month-arrow" @click="previousMonth">‹</button>
+  <main class="home-page">
+    <section class="page-content">
+      <!-- HEADER -->
+      <header class="topbar">
         <div>
-          <span>Mois affiché</span>
-          <strong>{{ selectedMonthLabel }}</strong>
-        </div>
-        <button type="button" class="month-arrow" @click="nextMonth">›</button>
-      </div>
-    </section>
-
-    <section class="companies-section">
-      <p class="eyebrow">Sociétés</p>
-      <h2>Choisir une société</h2>
-
-      <div class="company-list">
-        <button
-          v-for="company in companies"
-          :key="company.id"
-          type="button"
-          class="company-button"
-          :class="{ active: selectedCompanyId === company.id }"
-          @click="selectedCompanyId = company.id"
-        >
-          <span class="company-icon">{{ company.name.charAt(0) }}</span>
-          <span>{{ company.name }}</span>
-        </button>
-      </div>
-    </section>
-
-
-
-    <section class="employees-section">
-      <div class="section-header">
-        <div>
-          <p class="eyebrow">Équipe</p>
-          <h2>
-            {{ selectedCompany?.name || 'Employées' }}
-          </h2>
+          <p class="eyebrow">Bonjour</p>
+          <h1>{{ firstName || 'Bienvenue' }} 👋</h1>
+          <p class="date">{{ todayLabel }}</p>
         </div>
 
-        <button
-          type="button"
-          class="add-button"
-          :disabled="!selectedCompanyId"
-          @click="openCreateEmployee"
-        >
-          + Ajouter
-        </button>
-      </div>
+        <RouterLink to="/profile" class="profile-button">
+          {{ initial }}
+        </RouterLink>
+      </header>
 
-      <div
-        v-if="loading"
-        class="empty-card"
-      >
-        Chargement...
-      </div>
+      <!-- CARTE PRINCIPALE -->
+      <section class="hero-card">
+        <p class="hero-label">Aujourd’hui</p>
 
-      <div
-        v-else-if="employees.length === 0"
-        class="empty-card"
-      >
-        <div class="empty-avatar">+</div>
-        <strong>Aucune employée</strong>
-        <p>
-          Ajoutez la première employée de
-          {{ selectedCompany?.name }}.
+        <h2>{{ workedTimeLabel }}</h2>
+
+        <p class="hero-subtitle">
+          {{ todayEntry ? 'Temps travaillé enregistré' : 'Aucune heure enregistrée' }}
         </p>
-      </div>
 
-      <div v-else class="employees-list">
-        <article
-          v-for="employee in employees"
-          :key="employee.id"
-          class="employee-card"
-        >
-          <div class="employee-main">
-            <div class="employee-avatar">
-              {{ employee.first_name.charAt(0).toUpperCase() }}
-            </div>
+        <div class="hero-line"></div>
 
-            <div class="employee-info">
-              <h3>
-                {{ employee.first_name }}
-                {{ employee.last_name }}
-              </h3>
-
-              <p v-if="employee.phone">
-                {{ formatPhone(employee.phone) }}
-              </p>
-
-              <span>
-                {{ formatMoney(employee.hourly_rate) }}
-                € / heure
-              </span>
-
-              <div class="employee-companies">
-                <span
-                  v-for="company in employeeCompanies(employee.id)"
-                  :key="`${employee.id}-${company.id}`"
-                  class="mini-company-badge"
-                >
-                  {{ company.name }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div class="employee-month-summary">
-            <div>
-              <small>{{ selectedCompany?.name }}</small>
-              <span>
-                {{ employeeCompanyHours(employee.id, selectedCompanyId) }}
-              </span>
-            </div>
-
-            <div class="employee-total">
-              <small>Total toutes sociétés</small>
-              <strong>
-                {{ employeeAllCompaniesHours(employee.id) }}
-              </strong>
-            </div>
-          </div>
-
-          <div class="employee-salary-line">
-            <span>Salaire estimé total</span>
-            <strong>
-              {{ employeeAllCompaniesSalary(employee.id) }} €
-            </strong>
-          </div>
-
-          <div class="employee-actions">
-            <button
-              type="button"
-              class="hours-button"
-              @click="manageHours(employee)"
-            >
-              Gérer les heures
-            </button>
-
-            <button
-              type="button"
-              class="small-button"
-              @click="openEditEmployee(employee)"
-            >
-              Modifier
-            </button>
-
-            <button
-              type="button"
-              class="small-button delete"
-              @click="removeEmployee(employee)"
-            >
-              Supprimer
-            </button>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- MODAL EMPLOYÉE -->
-    <div
-      v-if="showEmployeeModal"
-      class="modal-backdrop"
-      @click.self="closeEmployeeModal"
-    >
-      <section class="modal-card">
-        <div class="modal-header">
+        <div class="hero-times">
           <div>
-            <p class="eyebrow">
-              {{ editingEmployee ? 'Modification' : 'Nouvelle employée' }}
-            </p>
-
-            <h2>
-              {{
-                editingEmployee
-                  ? 'Modifier l’employée'
-                  : 'Ajouter une employée'
-              }}
-            </h2>
+            <span>Début</span>
+            <strong>{{ form.startTime || '--:--' }}</strong>
           </div>
 
-          <button
-            type="button"
-            class="close-button"
-            @click="closeEmployeeModal"
-          >
-            ×
-          </button>
+          <div>
+            <span>Fin</span>
+            <strong>{{ form.endTime || '--:--' }}</strong>
+          </div>
         </div>
-
-        <p
-          v-if="!editingEmployee"
-          class="form-help"
-        >
-          Si cette personne existe déjà dans une autre société,
-          utilisez le même numéro de téléphone : Tempo la rattachera
-          automatiquement au même profil.
-        </p>
-
-        <form
-          class="employee-form"
-          @submit.prevent="saveEmployee"
-        >
-          <label>
-            <span>Prénom</span>
-            <input
-              v-model.trim="employeeForm.firstName"
-              type="text"
-              required
-            />
-          </label>
-
-          <label>
-            <span>Nom</span>
-            <input
-              v-model.trim="employeeForm.lastName"
-              type="text"
-              required
-            />
-          </label>
-
-          <label>
-            <span>Numéro de téléphone</span>
-            <input
-              v-model.trim="employeeForm.phone"
-              type="tel"
-              placeholder="06 12 34 56 78"
-              required
-            />
-          </label>
-
-          <label>
-            <span>Taux horaire (€)</span>
-            <input
-              v-model.number="employeeForm.hourlyRate"
-              type="number"
-              min="0"
-              step="0.01"
-              required
-            />
-          </label>
-
-          <fieldset class="companies-fieldset">
-            <legend>Sociétés de l’employée</legend>
-
-            <label
-              v-for="company in companies"
-              :key="`employee-company-${company.id}`"
-              class="company-check"
-            >
-              <input
-                v-model="employeeForm.companyIds"
-                type="checkbox"
-                :value="company.id"
-              />
-
-              <span>{{ company.name }}</span>
-            </label>
-          </fieldset>
-
-          <div
-            v-if="employeeFormError"
-            class="form-error"
-          >
-            {{ employeeFormError }}
-          </div>
-
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="cancel-button"
-              @click="closeEmployeeModal"
-            >
-              Annuler
-            </button>
-
-            <button
-              type="submit"
-              class="save-button"
-              :disabled="savingEmployee"
-            >
-              {{
-                savingEmployee
-                  ? 'Enregistrement...'
-                  : editingEmployee
-                    ? 'Enregistrer'
-                    : 'Ajouter'
-              }}
-            </button>
-          </div>
-        </form>
       </section>
-    </div>
 
-    <!-- MODAL GESTION DES HEURES -->
-    <div
-      v-if="showHoursModal"
-      class="modal-backdrop"
-      @click.self="closeHoursModal"
-    >
-      <section class="modal-card hours-modal">
-        <div class="modal-header">
+      <!-- RÉSUMÉ DU MOIS -->
+      <section class="summary-section">
+        <div class="section-heading">
           <div>
-            <p class="eyebrow">
-              Horaires · {{ selectedMonthLabel }}
-            </p>
-
-            <h2>
-              {{ selectedEmployee?.first_name }}
-              {{ selectedEmployee?.last_name }}
-            </h2>
+            <p class="eyebrow">Ce mois-ci</p>
+            <h2>{{ currentMonthLabel }}</h2>
           </div>
 
-          <button
-            type="button"
-            class="close-button"
-            @click="closeHoursModal"
-          >
-            ×
-          </button>
+          <RouterLink to="/month" class="see-more">
+            Voir le mois →
+          </RouterLink>
         </div>
 
-        <div class="hours-summary">
-          <div>
-            <span>Total toutes sociétés</span>
-            <strong>{{ selectedEmployeeMonthHours }}</strong>
-          </div>
+        <div class="summary-grid">
+          <article class="summary-card">
+            <span>Heures</span>
+            <strong>{{ monthWorkedLabel }}</strong>
+          </article>
 
-          <div>
+          <article class="summary-card">
             <span>Salaire estimé</span>
-            <strong>{{ selectedEmployeeMonthSalary }} €</strong>
-          </div>
-        </div>
-
-        <div class="employee-company-breakdown">
-          <article
-            v-for="company in selectedEmployeeCompanies"
-            :key="`breakdown-${company.id}`"
-          >
-            <span>{{ company.name }}</span>
-            <strong>
-              {{ employeeCompanyHours(selectedEmployee?.id || '', company.id) }}
-            </strong>
-          </article>
-        </div>
-
-        <button
-          type="button"
-          class="add-hours-button"
-          @click="openCreateTimeEntry"
-        >
-          + Ajouter des heures
-        </button>
-
-        <div
-          v-if="selectedEmployeeTimeEntries.length === 0"
-          class="empty-card"
-        >
-          <strong>Aucune journée enregistrée</strong>
-          <p>
-            Ajoutez les premières heures de cette employée
-            pour {{ selectedMonthLabel }}.
-          </p>
-        </div>
-
-        <div
-          v-else
-          class="time-entry-list"
-        >
-          <article
-            v-for="entry in selectedEmployeeTimeEntries"
-            :key="entry.id"
-            class="time-entry-card"
-          >
-            <div class="time-entry-top">
-              <div>
-                <strong>
-                  {{ formatDate(entry.work_date) }}
-                </strong>
-
-                <p>
-                  {{ formatTime(entry.start_time) }}
-                  →
-                  {{ formatTime(entry.end_time) }}
-                </p>
-              </div>
-
-              <span class="worked-badge">
-                {{ formatWorkedTime(entry.worked_minutes) }}
-              </span>
-            </div>
-
-            <div class="entry-company">
-              {{ companyName(entry.company_id) }}
-            </div>
-
-            <p
-              v-if="entry.pause_start && entry.pause_end"
-              class="pause-line"
-            >
-              Pause :
-              {{ formatTime(entry.pause_start) }}
-              →
-              {{ formatTime(entry.pause_end) }}
-            </p>
-
-            <div class="time-entry-actions">
-              <button
-                type="button"
-                class="small-button"
-                @click="openEditTimeEntry(entry)"
-              >
-                Modifier
-              </button>
-
-              <button
-                type="button"
-                class="small-button delete"
-                @click="removeTimeEntry(entry)"
-              >
-                Supprimer
-              </button>
-            </div>
+            <strong>{{ monthSalaryLabel }} €</strong>
           </article>
         </div>
       </section>
-    </div>
 
-    <!-- MODAL AJOUT / MODIFICATION HEURES -->
-    <div
-      v-if="showTimeEntryModal"
-      class="modal-backdrop higher-modal"
-      @click.self="closeTimeEntryModal"
-    >
-      <section class="modal-card">
-        <div class="modal-header">
+      <!-- HORAIRES DU JOUR -->
+      <section class="hours-section">
+        <div class="section-heading">
           <div>
-            <p class="eyebrow">
-              {{ editingTimeEntry ? 'Modification' : 'Nouvelle journée' }}
-            </p>
-
-            <h2>
-              {{
-                editingTimeEntry
-                  ? 'Modifier les heures'
-                  : 'Ajouter des heures'
-              }}
-            </h2>
+            <p class="eyebrow">Ma journée</p>
+            <h2>Mes horaires</h2>
           </div>
-
-          <button
-            type="button"
-            class="close-button"
-            @click="closeTimeEntryModal"
-          >
-            ×
-          </button>
         </div>
 
-        <form
-          class="employee-form"
-          @submit.prevent="saveTimeEntry"
-        >
-          <label>
-            <span>Société</span>
+        <div class="hours-card">
+          <div class="company-field">
+            <label for="company">Société</label>
+
             <select
-              v-model="timeForm.companyId"
-              required
+              id="company"
+              v-model="selectedCompanyId"
+              :disabled="companies.length <= 1"
             >
               <option
+                v-if="companies.length === 0"
                 value=""
-                disabled
               >
-                Choisir une société
+                Aucune société attribuée
               </option>
 
               <option
-                v-for="company in selectedEmployeeCompanies"
-                :key="`time-company-${company.id}`"
+                v-for="company in companies"
+                :key="company.id"
                 :value="company.id"
               >
                 {{ company.name }}
               </option>
             </select>
-          </label>
 
-          <label>
-            <span>Date</span>
-            <input
-              v-model="timeForm.date"
-              type="date"
-              required
-            />
-          </label>
+            <p
+              v-if="companies.length === 0"
+              class="company-help"
+            >
+              Demande à l’administratrice de t’attribuer une société.
+            </p>
+          </div>
 
           <div class="time-grid">
             <label>
               <span>Début</span>
+
               <input
-                v-model="timeForm.startTime"
+                v-model="form.startTime"
                 type="time"
-                required
               />
             </label>
 
             <label>
               <span>Fin</span>
-              <input
-                v-model="timeForm.endTime"
-                type="time"
-                required
-              />
-            </label>
 
-            <label>
-              <span>Début pause (optionnel)</span>
               <input
-                v-model="timeForm.pauseStart"
-                type="time"
-              />
-            </label>
-
-            <label>
-              <span>Fin pause (optionnel)</span>
-              <input
-                v-model="timeForm.pauseEnd"
+                v-model="form.endTime"
                 type="time"
               />
             </label>
           </div>
 
-          <div class="calculated-hours">
+          <div class="pause-title">
+            Pause
+            <span>optionnel</span>
+          </div>
+
+          <div class="time-grid">
+            <label>
+              <span>Début pause</span>
+
+              <input
+                v-model="form.pauseStart"
+                type="time"
+              />
+            </label>
+
+            <label>
+              <span>Fin pause</span>
+
+              <input
+                v-model="form.pauseEnd"
+                type="time"
+              />
+            </label>
+          </div>
+
+          <div class="worked-preview">
             <span>Temps travaillé</span>
-            <strong>{{ calculatedWorkedTime }}</strong>
+            <strong>{{ calculatedWorkedLabel }}</strong>
           </div>
 
-          <div
-            v-if="timeFormError"
-            class="form-error"
+          <p
+            v-if="errorMessage"
+            class="message error"
           >
-            {{ timeFormError }}
-          </div>
+            {{ errorMessage }}
+          </p>
 
-          <div class="modal-actions">
-            <button
-              type="button"
-              class="cancel-button"
-              @click="closeTimeEntryModal"
-            >
-              Annuler
-            </button>
+          <p
+            v-if="successMessage"
+            class="message success"
+          >
+            {{ successMessage }}
+          </p>
 
-            <button
-              type="submit"
-              class="save-button"
-              :disabled="savingTimeEntry"
-            >
-              {{
-                savingTimeEntry
-                  ? 'Enregistrement...'
-                  : 'Enregistrer'
-              }}
-            </button>
-          </div>
-        </form>
+          <button
+            type="button"
+            class="save-button"
+            :disabled="saving"
+            @click="saveToday"
+          >
+            {{
+              saving
+                ? 'Enregistrement...'
+                : todayEntry
+                  ? 'Modifier mes horaires'
+                  : 'Enregistrer mes horaires'
+            }}
+          </button>
+        </div>
       </section>
-    </div>
+    </section>
 
-
-    <nav class="admin-bottom-nav">
-      <RouterLink to="/admin" class="admin-nav-item" exact-active-class="active">
-        <span class="admin-nav-icon">⌂</span>
-        <span>Accueil</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/equipe" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙♙</span>
-        <span>Équipe</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/profile" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙</span>
-        <span>Profil</span>
-      </RouterLink>
-    </nav>
-
+    <!-- NAVIGATION EMPLOYÉ -->
+    <EmployeeBottomNav />
   </main>
 </template>
 
@@ -616,7 +202,12 @@ import {
   watch,
 } from 'vue'
 
-import { RouterLink, useRouter } from 'vue-router'
+import {
+  RouterLink,
+  useRouter,
+} from 'vue-router'
+
+import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
 import { supabase } from '../lib/supabase'
 
 interface Company {
@@ -624,881 +215,120 @@ interface Company {
   name: string
 }
 
-interface Employee {
+interface TimeEntry {
   id: string
-  first_name: string
-  last_name: string
-  phone: string | null
-  hourly_rate: number
-}
-
-interface EmployeeCompany {
-  employee_id: string
-  company_id: string
-}
-
-interface EmployeeTimeEntry {
-  id: string
-  employee_id: string
-  company_id: string
+  user_id: string
+  company_id: string | null
   work_date: string
   start_time: string
   pause_start: string | null
   pause_end: string | null
   end_time: string
   worked_minutes: number
+  status: string
 }
 
 const router = useRouter()
 
 const firstName = ref('')
-const companies = ref<Company[]>([])
-const allEmployees = ref<Employee[]>([])
-const employeeCompanyLinks = ref<EmployeeCompany[]>([])
-const monthEntries = ref<EmployeeTimeEntry[]>([])
+const lastName = ref('')
+const hourlyRate = ref(0)
 
-const loading = ref(false)
+const companies = ref<Company[]>([])
 const selectedCompanyId = ref('')
 
-const now = new Date()
-const selectedMonth = ref(
-  `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, '0')}`
-)
+const todayEntry = ref<TimeEntry | null>(null)
+const monthEntries = ref<TimeEntry[]>([])
 
-const showEmployeeModal = ref(false)
-const editingEmployee = ref<Employee | null>(null)
-const savingEmployee = ref(false)
-const employeeFormError = ref('')
+const saving = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
 
-const employeeForm = ref({
-  firstName: '',
-  lastName: '',
-  phone: '',
-  hourlyRate: 0,
-  companyIds: [] as string[],
-})
-
-const showHoursModal = ref(false)
-const selectedEmployee = ref<Employee | null>(null)
-
-const showTimeEntryModal = ref(false)
-const editingTimeEntry = ref<EmployeeTimeEntry | null>(null)
-const savingTimeEntry = ref(false)
-const timeFormError = ref('')
-
-const timeForm = ref({
-  companyId: '',
-  date: '',
-  startTime: '09:00',
+const emptyForm = () => ({
+  startTime: '',
   pauseStart: '',
   pauseEnd: '',
-  endTime: '18:00',
+  endTime: '',
 })
 
-const selectedCompany = computed(() =>
-  companies.value.find(
-    (company) =>
-      company.id === selectedCompanyId.value
+const form = ref(emptyForm())
+
+const now = new Date()
+
+const localDate = (
+  date: Date
+) => {
+  const year = date.getFullYear()
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, '0')
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+const today = localDate(now)
+
+const monthStart =
+  `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, '0')}-01`
+
+const lastDay = new Date(
+  now.getFullYear(),
+  now.getMonth() + 1,
+  0
+).getDate()
+
+const monthEnd =
+  `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, '0')}-${String(
+    lastDay
+  ).padStart(2, '0')}`
+
+const initial = computed(() => {
+  return (
+    firstName.value
+      .charAt(0)
+      .toUpperCase() || 'T'
   )
-)
+})
 
-const selectedMonthLabel = computed(() => {
-  const [year, month] =
-    selectedMonth.value.split('-').map(Number)
+const todayLabel = computed(() => {
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }
+  ).format(now)
+})
 
+const currentMonthLabel = computed(() => {
   return new Intl.DateTimeFormat(
     'fr-FR',
     {
       month: 'long',
       year: 'numeric',
     }
-  ).format(
-    new Date(year, month - 1, 1)
-  )
+  ).format(now)
 })
-
-const monthBounds = computed(() => {
-  const [year, month] =
-    selectedMonth.value.split('-').map(Number)
-
-  const lastDay =
-    new Date(year, month, 0).getDate()
-
-  return {
-    start:
-      `${year}-${String(month).padStart(2, '0')}-01`,
-    end:
-      `${year}-${String(month).padStart(2, '0')}-${String(
-        lastDay
-      ).padStart(2, '0')}`,
-  }
-})
-
-const previousMonth = () => {
-  const [year, month] =
-    selectedMonth.value.split('-').map(Number)
-
-  const date = new Date(year, month - 2, 1)
-
-  selectedMonth.value =
-    `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
-}
-
-const nextMonth = () => {
-  const [year, month] =
-    selectedMonth.value.split('-').map(Number)
-
-  const date = new Date(year, month, 1)
-
-  selectedMonth.value =
-    `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
-}
-
-const formatMoney = (value: number) =>
-  Number(value ?? 0)
-    .toFixed(2)
-    .replace('.', ',')
-
-const formatWorkedTime = (minutes: number) => {
-  const safeMinutes = Number(minutes ?? 0)
-  const hours = Math.floor(safeMinutes / 60)
-  const remainingMinutes = safeMinutes % 60
-
-  if (remainingMinutes === 0) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${String(
-    remainingMinutes
-  ).padStart(2, '0')}`
-}
-
-const formatDate = (date: string) =>
-  new Intl.DateTimeFormat(
-    'fr-FR',
-    {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    }
-  ).format(
-    new Date(`${date}T12:00:00`)
-  )
-
-const formatTime = (time: string | null) =>
-  time ? time.slice(0, 5) : ''
-
-const normalizePhone = (phone: string) =>
-  phone.replace(/\D/g, '')
-
-const formatPhone = (phone: string) => {
-  const digits = normalizePhone(phone)
-
-  if (digits.length !== 10) {
-    return phone
-  }
-
-  return digits
-    .match(/.{1,2}/g)
-    ?.join(' ') ?? phone
-}
-
-const companyName = (companyId: string) =>
-  companies.value.find(
-    (company) => company.id === companyId
-  )?.name ?? 'Société'
-
-const employeeRate = (employeeId: string) =>
-  allEmployees.value.find(
-    (employee) => employee.id === employeeId
-  )?.hourly_rate ?? 0
-
-const minutesForEntries = (
-  entries: EmployeeTimeEntry[]
-) =>
-  entries.reduce(
-    (total, entry) =>
-      total + Number(entry.worked_minutes ?? 0),
-    0
-  )
-
-const salaryForEntries = (
-  entries: EmployeeTimeEntry[]
-) =>
-  entries.reduce(
-    (total, entry) =>
-      total +
-      (Number(entry.worked_minutes ?? 0) / 60) *
-        employeeRate(entry.employee_id),
-    0
-  )
-
-const employeeCompanies = (
-  employeeId: string
-) => {
-  const ids =
-    employeeCompanyLinks.value
-      .filter(
-        (link) =>
-          link.employee_id === employeeId
-      )
-      .map((link) => link.company_id)
-
-  return companies.value.filter(
-    (company) => ids.includes(company.id)
-  )
-}
-
-const selectedEmployeeCompanies = computed(() => {
-  if (!selectedEmployee.value) {
-    return []
-  }
-
-  return employeeCompanies(
-    selectedEmployee.value.id
-  )
-})
-
-const employees = computed(() => {
-  if (!selectedCompanyId.value) {
-    return []
-  }
-
-  const employeeIds =
-    employeeCompanyLinks.value
-      .filter(
-        (link) =>
-          link.company_id ===
-          selectedCompanyId.value
-      )
-      .map((link) => link.employee_id)
-
-  return allEmployees.value
-    .filter(
-      (employee) =>
-        employeeIds.includes(employee.id)
-    )
-    .sort((a, b) =>
-      a.first_name.localeCompare(
-        b.first_name,
-        'fr'
-      )
-    )
-})
-
-
-
-
-
-
-
-
-
-const employeeCompanyHours = (
-  employeeId: string,
-  companyId: string
-) =>
-  formatWorkedTime(
-    minutesForEntries(
-      monthEntries.value.filter(
-        (entry) =>
-          entry.employee_id === employeeId &&
-          entry.company_id === companyId
-      )
-    )
-  )
-
-const employeeAllCompaniesHours = (
-  employeeId: string
-) =>
-  formatWorkedTime(
-    minutesForEntries(
-      monthEntries.value.filter(
-        (entry) =>
-          entry.employee_id === employeeId
-      )
-    )
-  )
-
-const employeeAllCompaniesSalary = (
-  employeeId: string
-) =>
-  formatMoney(
-    salaryForEntries(
-      monthEntries.value.filter(
-        (entry) =>
-          entry.employee_id === employeeId
-      )
-    )
-  )
-
-const selectedEmployeeTimeEntries =
-  computed(() => {
-    if (!selectedEmployee.value) {
-      return []
-    }
-
-    return monthEntries.value
-      .filter(
-        (entry) =>
-          entry.employee_id ===
-          selectedEmployee.value?.id
-      )
-      .sort(
-        (a, b) =>
-          b.work_date.localeCompare(
-            a.work_date
-          ) ||
-          b.start_time.localeCompare(
-            a.start_time
-          )
-      )
-  })
-
-const selectedEmployeeMonthMinutes =
-  computed(() =>
-    minutesForEntries(
-      selectedEmployeeTimeEntries.value
-    )
-  )
-
-const selectedEmployeeMonthHours =
-  computed(() =>
-    formatWorkedTime(
-      selectedEmployeeMonthMinutes.value
-    )
-  )
-
-const selectedEmployeeMonthSalary =
-  computed(() => {
-    if (!selectedEmployee.value) {
-      return '0,00'
-    }
-
-    return formatMoney(
-      (selectedEmployeeMonthMinutes.value /
-        60) *
-        selectedEmployee.value.hourly_rate
-    )
-  })
-
-const loadData = async () => {
-  loading.value = true
-
-  const { start, end } =
-    monthBounds.value
-
-  const [
-    employeesResult,
-    linksResult,
-    entriesResult,
-  ] = await Promise.all([
-    supabase
-      .from('employees')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        phone,
-        hourly_rate
-      `),
-
-    supabase
-      .from('employee_companies')
-      .select(`
-        employee_id,
-        company_id
-      `),
-
-    supabase
-      .from('employee_time_entries')
-      .select('*')
-      .gte('work_date', start)
-      .lte('work_date', end),
-  ])
-
-  if (employeesResult.error) {
-    console.error(
-      'Erreur employées :',
-      employeesResult.error
-    )
-  }
-
-  if (linksResult.error) {
-    console.error(
-      'Erreur rattachements :',
-      linksResult.error
-    )
-  }
-
-  if (entriesResult.error) {
-    console.error(
-      'Erreur heures :',
-      entriesResult.error
-    )
-  }
-
-  allEmployees.value =
-    (employeesResult.data ?? []).map(
-      (employee) => ({
-        ...employee,
-        hourly_rate:
-          Number(
-            employee.hourly_rate ?? 0
-          ),
-      })
-    )
-
-  employeeCompanyLinks.value =
-    linksResult.data ?? []
-
-  monthEntries.value =
-    (entriesResult.data ?? []).map(
-      (entry) => ({
-        ...entry,
-        worked_minutes:
-          Number(
-            entry.worked_minutes ?? 0
-          ),
-      })
-    )
-
-  loading.value = false
-}
-
-watch(
-  selectedMonth,
-  async () => {
-    await loadData()
-  }
-)
-
-onMounted(async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    await router.push('/')
-    return
-  }
-
-  const {
-    data: adminProfile,
-    error: adminError,
-  } = await supabase
-    .from('profiles')
-    .select('first_name, role')
-    .eq('id', user.id)
-    .single()
-
-  if (
-    adminError ||
-    !adminProfile ||
-    adminProfile.role !== 'admin'
-  ) {
-    await router.push('/home')
-    return
-  }
-
-  firstName.value =
-    adminProfile.first_name ?? ''
-
-  const {
-    data: companiesData,
-    error: companiesError,
-  } = await supabase
-    .from('companies')
-    .select('id, name')
-    .order('name')
-
-  if (companiesError) {
-    console.error(companiesError)
-    return
-  }
-
-  companies.value =
-    companiesData ?? []
-
-  if (companies.value.length > 0) {
-    selectedCompanyId.value =
-      companies.value[0].id
-  }
-
-  await loadData()
-})
-
-const resetEmployeeForm = () => {
-  employeeForm.value = {
-    firstName: '',
-    lastName: '',
-    phone: '',
-    hourlyRate: 0,
-    companyIds:
-      selectedCompanyId.value
-        ? [selectedCompanyId.value]
-        : [],
-  }
-
-  employeeFormError.value = ''
-}
-
-const openCreateEmployee = () => {
-  editingEmployee.value = null
-  resetEmployeeForm()
-  showEmployeeModal.value = true
-}
-
-const openEditEmployee = (
-  employee: Employee
-) => {
-  editingEmployee.value = employee
-
-  employeeForm.value = {
-    firstName:
-      employee.first_name,
-    lastName:
-      employee.last_name,
-    phone:
-      employee.phone ?? '',
-    hourlyRate:
-      employee.hourly_rate,
-    companyIds:
-      employeeCompanies(employee.id)
-        .map(
-          (company) => company.id
-        ),
-  }
-
-  employeeFormError.value = ''
-  showEmployeeModal.value = true
-}
-
-const closeEmployeeModal = () => {
-  showEmployeeModal.value = false
-  editingEmployee.value = null
-  resetEmployeeForm()
-}
-
-const saveEmployeeLinks = async (
-  employeeId: string,
-  companyIds: string[]
-) => {
-  const { error: deleteError } =
-    await supabase
-      .from('employee_companies')
-      .delete()
-      .eq('employee_id', employeeId)
-
-  if (deleteError) {
-    throw deleteError
-  }
-
-  const { error: insertError } =
-    await supabase
-      .from('employee_companies')
-      .insert(
-        companyIds.map(
-          (companyId) => ({
-            employee_id: employeeId,
-            company_id: companyId,
-          })
-        )
-      )
-
-  if (insertError) {
-    throw insertError
-  }
-}
-
-const saveEmployee = async () => {
-  employeeFormError.value = ''
-
-  if (
-    employeeForm.value.companyIds.length === 0
-  ) {
-    employeeFormError.value =
-      'Choisissez au moins une société.'
-    return
-  }
-
-  const normalizedPhone =
-    normalizePhone(
-      employeeForm.value.phone
-    )
-
-  if (!normalizedPhone) {
-    employeeFormError.value =
-      'Le numéro de téléphone est obligatoire.'
-    return
-  }
-
-  savingEmployee.value = true
-
-  try {
-    if (editingEmployee.value) {
-      const { error } = await supabase
-        .from('employees')
-        .update({
-          first_name:
-            employeeForm.value.firstName,
-          last_name:
-            employeeForm.value.lastName,
-          phone:
-            normalizedPhone,
-          hourly_rate:
-            Number(
-              employeeForm.value.hourlyRate
-            ),
-        })
-        .eq(
-          'id',
-          editingEmployee.value.id
-        )
-
-      if (error) {
-        throw error
-      }
-
-      await saveEmployeeLinks(
-        editingEmployee.value.id,
-        employeeForm.value.companyIds
-      )
-    } else {
-      const existingEmployee =
-        allEmployees.value.find(
-          (employee) =>
-            employee.phone &&
-            normalizePhone(
-              employee.phone
-            ) === normalizedPhone
-        )
-
-      if (existingEmployee) {
-        const mergedCompanyIds =
-          Array.from(
-            new Set([
-              ...employeeCompanies(
-                existingEmployee.id
-              ).map(
-                (company) => company.id
-              ),
-              ...employeeForm.value.companyIds,
-            ])
-          )
-
-        const { error } = await supabase
-          .from('employees')
-          .update({
-            first_name:
-              employeeForm.value.firstName,
-            last_name:
-              employeeForm.value.lastName,
-            hourly_rate:
-              Number(
-                employeeForm.value.hourlyRate
-              ),
-          })
-          .eq(
-            'id',
-            existingEmployee.id
-          )
-
-        if (error) {
-          throw error
-        }
-
-        await saveEmployeeLinks(
-          existingEmployee.id,
-          mergedCompanyIds
-        )
-      } else {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from('employees')
-          .insert({
-            first_name:
-              employeeForm.value.firstName,
-            last_name:
-              employeeForm.value.lastName,
-            phone:
-              normalizedPhone,
-            hourly_rate:
-              Number(
-                employeeForm.value.hourlyRate
-              ),
-          })
-          .select('id')
-          .single()
-
-        if (error || !data) {
-          throw error ??
-            new Error(
-              'Employée non créée'
-            )
-        }
-
-        await saveEmployeeLinks(
-          data.id,
-          employeeForm.value.companyIds
-        )
-      }
-    }
-
-    savingEmployee.value = false
-    closeEmployeeModal()
-    await loadData()
-  } catch (error) {
-    console.error(error)
-
-    employeeFormError.value =
-      'Impossible d’enregistrer cette employée.'
-
-    savingEmployee.value = false
-  }
-}
-
-const removeEmployee = async (
-  employee: Employee
-) => {
-  const confirmed =
-    window.confirm(
-      `Supprimer ${employee.first_name} ${employee.last_name} ? Toutes ses heures de toutes les sociétés seront également supprimées.`
-    )
-
-  if (!confirmed) {
-    return
-  }
-
-  const { error } = await supabase
-    .from('employees')
-    .delete()
-    .eq('id', employee.id)
-
-  if (error) {
-    console.error(error)
-    return
-  }
-
-  await loadData()
-}
-
-const manageHours = (
-  employee: Employee
-) => {
-  selectedEmployee.value = employee
-  showHoursModal.value = true
-}
-
-const closeHoursModal = () => {
-  showHoursModal.value = false
-  selectedEmployee.value = null
-}
-
-const resetTimeForm = () => {
-  const [year, month] =
-    selectedMonth.value.split('-').map(Number)
-
-  const current = new Date()
-  const isCurrentMonth =
-    current.getFullYear() === year &&
-    current.getMonth() + 1 === month
-
-  const day =
-    isCurrentMonth
-      ? current.getDate()
-      : 1
-
-  const defaultCompany =
-    selectedEmployee.value &&
-    employeeCompanies(
-      selectedEmployee.value.id
-    ).some(
-      (company) =>
-        company.id ===
-        selectedCompanyId.value
-    )
-      ? selectedCompanyId.value
-      : selectedEmployeeCompanies.value[0]
-          ?.id ?? ''
-
-  timeForm.value = {
-    companyId:
-      defaultCompany,
-    date:
-      `${year}-${String(month).padStart(
-        2,
-        '0'
-      )}-${String(day).padStart(
-        2,
-        '0'
-      )}`,
-    startTime: '09:00',
-    pauseStart: '',
-    pauseEnd: '',
-    endTime: '18:00',
-  }
-
-  timeFormError.value = ''
-}
-
-const openCreateTimeEntry = () => {
-  editingTimeEntry.value = null
-  resetTimeForm()
-  showTimeEntryModal.value = true
-}
-
-const openEditTimeEntry = (
-  entry: EmployeeTimeEntry
-) => {
-  editingTimeEntry.value = entry
-
-  timeForm.value = {
-    companyId:
-      entry.company_id,
-    date:
-      entry.work_date,
-    startTime:
-      formatTime(
-        entry.start_time
-      ),
-    pauseStart:
-      formatTime(
-        entry.pause_start
-      ),
-    pauseEnd:
-      formatTime(
-        entry.pause_end
-      ),
-    endTime:
-      formatTime(
-        entry.end_time
-      ),
-  }
-
-  timeFormError.value = ''
-  showTimeEntryModal.value = true
-}
-
-const closeTimeEntryModal = () => {
-  showTimeEntryModal.value = false
-  editingTimeEntry.value = null
-  timeFormError.value = ''
-}
 
 const minutesFromTime = (
-  value: string
+  time: string
 ) => {
+  if (!time) {
+    return 0
+  }
+
   const [hours, minutes] =
-    value.split(':').map(Number)
+    time.split(':').map(Number)
 
   return hours * 60 + minutes
 }
@@ -1506,40 +336,47 @@ const minutesFromTime = (
 const calculatedWorkedMinutes =
   computed(() => {
     if (
-      !timeForm.value.startTime ||
-      !timeForm.value.endTime
+      !form.value.startTime ||
+      !form.value.endTime
     ) {
       return 0
     }
 
     const start =
       minutesFromTime(
-        timeForm.value.startTime
+        form.value.startTime
       )
 
     const end =
       minutesFromTime(
-        timeForm.value.endTime
+        form.value.endTime
       )
 
     if (end <= start) {
       return 0
     }
 
-    let pauseMinutes = 0
+    let pause = 0
 
     if (
-      timeForm.value.pauseStart &&
-      timeForm.value.pauseEnd
+      form.value.pauseStart ||
+      form.value.pauseEnd
     ) {
+      if (
+        !form.value.pauseStart ||
+        !form.value.pauseEnd
+      ) {
+        return 0
+      }
+
       const pauseStart =
         minutesFromTime(
-          timeForm.value.pauseStart
+          form.value.pauseStart
         )
 
       const pauseEnd =
         minutesFromTime(
-          timeForm.value.pauseEnd
+          form.value.pauseEnd
         )
 
       if (
@@ -1550,145 +387,492 @@ const calculatedWorkedMinutes =
         return 0
       }
 
-      pauseMinutes =
+      pause =
         pauseEnd - pauseStart
     }
 
     return Math.max(
       0,
-      end - start - pauseMinutes
+      end - start - pause
     )
   })
 
-const calculatedWorkedTime =
+const formatMinutes = (
+  minutes: number
+) => {
+  const hours =
+    Math.floor(minutes / 60)
+
+  const remaining =
+    minutes % 60
+
+  if (remaining === 0) {
+    return `${hours} h`
+  }
+
+  return `${hours} h ${String(
+    remaining
+  ).padStart(2, '0')}`
+}
+
+const calculatedWorkedLabel =
   computed(() =>
-    formatWorkedTime(
+    formatMinutes(
       calculatedWorkedMinutes.value
     )
   )
 
-const saveTimeEntry = async () => {
-  if (!selectedEmployee.value) {
+const workedTimeLabel =
+  computed(() => {
+    if (!todayEntry.value) {
+      return '0 h'
+    }
+
+    return formatMinutes(
+      Number(
+        todayEntry.value.worked_minutes ??
+        0
+      )
+    )
+  })
+
+const monthMinutes =
+  computed(() =>
+    monthEntries.value.reduce(
+      (total, entry) =>
+        total +
+        Number(
+          entry.worked_minutes ?? 0
+        ),
+      0
+    )
+  )
+
+const monthWorkedLabel =
+  computed(() =>
+    formatMinutes(
+      monthMinutes.value
+    )
+  )
+
+const monthSalary =
+  computed(() =>
+    (
+      monthMinutes.value /
+      60 *
+      hourlyRate.value
+    )
+  )
+
+const monthSalaryLabel =
+  computed(() =>
+    monthSalary.value
+      .toFixed(2)
+      .replace('.', ',')
+  )
+
+const syncTodayEntry = () => {
+  if (!selectedCompanyId.value) {
+    todayEntry.value = null
+    form.value = emptyForm()
+    return
+  }
+
+  todayEntry.value =
+    monthEntries.value.find(
+      (entry) =>
+        entry.work_date === today &&
+        entry.company_id ===
+          selectedCompanyId.value
+    ) ?? null
+
+  if (!todayEntry.value) {
+    form.value = emptyForm()
+    return
+  }
+
+  form.value = {
+    startTime:
+      todayEntry.value
+        .start_time
+        ?.slice(0, 5) ?? '',
+
+    pauseStart:
+      todayEntry.value
+        .pause_start
+        ?.slice(0, 5) ?? '',
+
+    pauseEnd:
+      todayEntry.value
+        .pause_end
+        ?.slice(0, 5) ?? '',
+
+    endTime:
+      todayEntry.value
+        .end_time
+        ?.slice(0, 5) ?? '',
+  }
+}
+
+const loadCompanies = async (
+  userId: string
+) => {
+  const {
+    data: employee,
+    error: employeeError,
+  } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('auth_user_id', userId)
+    .maybeSingle()
+
+  if (employeeError) {
+    console.error(employeeError)
+    companies.value = []
+    selectedCompanyId.value = ''
+    return
+  }
+
+  if (!employee) {
+    companies.value = []
+    selectedCompanyId.value = ''
+    return
+  }
+
+  const {
+    data: links,
+    error: linksError,
+  } = await supabase
+    .from('employee_companies')
+    .select('company_id')
+    .eq('employee_id', employee.id)
+
+  if (linksError) {
+    console.error(linksError)
+    companies.value = []
+    selectedCompanyId.value = ''
+    return
+  }
+
+  const companyIds =
+    (links ?? []).map(
+      (link) => link.company_id
+    )
+
+  if (companyIds.length === 0) {
+    companies.value = []
+    selectedCompanyId.value = ''
+    return
+  }
+
+  const {
+    data: companyRows,
+    error: companiesError,
+  } = await supabase
+    .from('companies')
+    .select('id, name')
+    .in('id', companyIds)
+    .order('name')
+
+  if (companiesError) {
+    console.error(companiesError)
+    companies.value = []
+    selectedCompanyId.value = ''
+    return
+  }
+
+  companies.value =
+    (companyRows ?? []) as Company[]
+
+  const stillExists =
+    companies.value.some(
+      (company) =>
+        company.id ===
+        selectedCompanyId.value
+    )
+
+  if (!stillExists) {
+    selectedCompanyId.value =
+      companies.value[0]?.id ?? ''
+  }
+}
+
+const loadData = async () => {
+  const {
+    data: { user },
+  } =
+    await supabase.auth.getUser()
+
+  if (!user) {
+    await router.push('/')
+    return
+  }
+
+  const {
+    data: profile,
+    error: profileError,
+  } = await supabase
+    .from('profiles')
+    .select(`
+      first_name,
+      last_name,
+      hourly_rate,
+      role
+    `)
+    .eq('id', user.id)
+    .single()
+
+  if (
+    profileError ||
+    !profile
+  ) {
+    console.error(
+      profileError
+    )
+
+    await supabase.auth.signOut()
+    await router.push('/')
+
     return
   }
 
   if (
-    !timeForm.value.companyId ||
-    !timeForm.value.date ||
-    !timeForm.value.startTime ||
-    !timeForm.value.endTime
+    profile.role === 'admin'
   ) {
-    timeFormError.value =
-      'La société, la date, le début et la fin sont obligatoires.'
+    await router.push('/admin')
     return
   }
 
-  const hasPauseStart =
-    Boolean(
-      timeForm.value.pauseStart
+  firstName.value =
+    profile.first_name ?? ''
+
+  lastName.value =
+    profile.last_name ?? ''
+
+  hourlyRate.value =
+    Number(
+      profile.hourly_rate ?? 0
     )
 
-  const hasPauseEnd =
-    Boolean(
-      timeForm.value.pauseEnd
+  await loadCompanies(user.id)
+
+  const {
+    data: entries,
+    error: entriesError,
+  } = await supabase
+    .from('time_entries')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte(
+      'work_date',
+      monthStart
+    )
+    .lte(
+      'work_date',
+      monthEnd
+    )
+    .order(
+      'work_date',
+      {
+        ascending: false,
+      }
     )
 
-  if (hasPauseStart !== hasPauseEnd) {
-    timeFormError.value =
-      'Renseignez le début et la fin de la pause, ou laissez les deux champs vides.'
+  if (entriesError) {
+    console.error(
+      entriesError
+    )
+
+    return
+  }
+
+  monthEntries.value =
+    (entries ?? []).map(
+      (entry) => ({
+        ...entry,
+        worked_minutes:
+          Number(
+            entry.worked_minutes ??
+            0
+          ),
+      })
+    )
+
+  syncTodayEntry()
+}
+
+const saveToday = async () => {
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  if (!selectedCompanyId.value) {
+    errorMessage.value =
+      'Aucune société ne t’a été attribuée.'
+
     return
   }
 
   if (
-    calculatedWorkedMinutes.value <= 0
+    !form.value.startTime ||
+    !form.value.endTime
   ) {
-    timeFormError.value =
+    errorMessage.value =
+      'Renseigne ton heure de début et de fin.'
+
+    return
+  }
+
+  const start =
+    minutesFromTime(
+      form.value.startTime
+    )
+
+  const end =
+    minutesFromTime(
+      form.value.endTime
+    )
+
+  if (end <= start) {
+    errorMessage.value =
+      'L’heure de fin doit être après l’heure de début.'
+
+    return
+  }
+
+  if (
+    Boolean(
+      form.value.pauseStart
+    ) !==
+    Boolean(
+      form.value.pauseEnd
+    )
+  ) {
+    errorMessage.value =
+      'Renseigne le début et la fin de la pause, ou laisse les deux champs vides.'
+
+    return
+  }
+
+  if (
+    form.value.pauseStart &&
+    form.value.pauseEnd
+  ) {
+    const pauseStart =
+      minutesFromTime(
+        form.value.pauseStart
+      )
+
+    const pauseEnd =
+      minutesFromTime(
+        form.value.pauseEnd
+      )
+
+    if (
+      pauseEnd <= pauseStart ||
+      pauseStart < start ||
+      pauseEnd > end
+    ) {
+      errorMessage.value =
+        'Les horaires de pause ne sont pas valides.'
+
+      return
+    }
+  }
+
+  if (
+    calculatedWorkedMinutes.value <=
+    0
+  ) {
+    errorMessage.value =
       'Les horaires renseignés ne sont pas valides.'
+
     return
   }
 
-  savingTimeEntry.value = true
-  timeFormError.value = ''
+  saving.value = true
+
+  const {
+    data: { user },
+  } =
+    await supabase.auth.getUser()
+
+  if (!user) {
+    saving.value = false
+    await router.push('/')
+    return
+  }
 
   const payload = {
-    employee_id:
-      selectedEmployee.value.id,
+    user_id: user.id,
     company_id:
-      timeForm.value.companyId,
-    work_date:
-      timeForm.value.date,
+      selectedCompanyId.value,
+    work_date: today,
     start_time:
-      timeForm.value.startTime,
+      form.value.startTime,
     pause_start:
-      timeForm.value.pauseStart ||
+      form.value.pauseStart ||
       null,
     pause_end:
-      timeForm.value.pauseEnd ||
+      form.value.pauseEnd ||
       null,
     end_time:
-      timeForm.value.endTime,
+      form.value.endTime,
     worked_minutes:
       calculatedWorkedMinutes.value,
+    status: 'pending',
   }
 
-  const query =
-    editingTimeEntry.value
-      ? supabase
-          .from(
-            'employee_time_entries'
-          )
-          .update(payload)
-          .eq(
-            'id',
-            editingTimeEntry.value.id
-          )
-      : supabase
-          .from(
-            'employee_time_entries'
-          )
-          .insert(payload)
+  let error = null
 
-  const { error } = await query
+  if (todayEntry.value) {
+    const result =
+      await supabase
+        .from('time_entries')
+        .update(payload)
+        .eq(
+          'id',
+          todayEntry.value.id
+        )
+
+    error = result.error
+  } else {
+    const result =
+      await supabase
+        .from('time_entries')
+        .insert(payload)
+
+    error = result.error
+  }
+
+  saving.value = false
 
   if (error) {
     console.error(error)
 
-    timeFormError.value =
-      'Impossible d’enregistrer cette journée.'
+    errorMessage.value =
+      'Impossible d’enregistrer les horaires.'
 
-    savingTimeEntry.value = false
     return
   }
 
-  savingTimeEntry.value = false
-  closeTimeEntryModal()
+  successMessage.value =
+    'Tes horaires ont bien été enregistrés.'
+
   await loadData()
 }
 
-const removeTimeEntry = async (
-  entry: EmployeeTimeEntry
-) => {
-  const confirmed =
-    window.confirm(
-      `Supprimer les heures du ${formatDate(entry.work_date)} à ${companyName(entry.company_id)} ?`
-    )
-
-  if (!confirmed) {
-    return
+watch(
+  selectedCompanyId,
+  () => {
+    errorMessage.value = ''
+    successMessage.value = ''
+    syncTodayEntry()
   }
+)
 
-  const { error } = await supabase
-    .from('employee_time_entries')
-    .delete()
-    .eq('id', entry.id)
-
-  if (error) {
-    console.error(error)
-    return
-  }
-
+onMounted(async () => {
   await loadData()
-}
+})
 </script>
 
 <style scoped>
@@ -1696,822 +880,457 @@ const removeTimeEntry = async (
   box-sizing: border-box;
 }
 
-.admin-page {
+.home-page {
   min-height: 100vh;
-  padding: 28px 20px 110px;
+
+  padding:
+    28px
+    20px
+    110px;
+
   background: #f7f1ec;
   color: #17372f;
 }
 
-.topbar,
-.month-section,
-.global-section,
-.companies-section,
-.summary-grid,
-.employees-section {
+.page-content {
   width: 100%;
   max-width: 520px;
-  margin-left: auto;
-  margin-right: auto;
+
+  margin: 0 auto;
 }
 
 .topbar {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
+  justify-content: space-between;
+
   gap: 15px;
-  margin-bottom: 22px;
+
+  margin-bottom: 26px;
 }
 
 .eyebrow {
   margin: 0 0 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #9b8174;
-}
 
-.topbar h1,
-.month-section h2,
-.global-section h2,
-.companies-section h2,
-.section-header h2,
-.modal-header h2 {
-  margin: 0;
-  color: #17372f;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+
+  text-transform: uppercase;
+
+  color: #a08173;
 }
 
 .topbar h1 {
-  font-size: 28px;
+  margin: 0;
+
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size: 30px;
+  font-weight: 400;
+
+  color: #17372f;
 }
 
-.subtitle {
+.date {
   margin: 5px 0 0;
-  font-size: 13px;
-  color: #7d7874;
+
+  font-size: 12px;
+
+  text-transform: capitalize;
+
+  color: #817b76;
 }
 
 .profile-button {
+  width: 45px;
+  height: 45px;
+
   flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px 6px 6px;
-  border-radius: 999px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
   background: #17372f;
   color: #fff;
-  font-size: 12px;
+
+  font-size: 17px;
   font-weight: 700;
+
   text-decoration: none;
 }
 
-.profile-icon {
-  width: 31px;
-  height: 31px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
-  font-size: 13px;
-  font-weight: 800;
-}
+.hero-card {
+  padding: 24px;
 
-.month-section {
-  margin-bottom: 20px;
-}
+  border-radius: 28px;
 
-.month-picker {
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  align-items: center;
-  gap: 10px;
-  padding: 11px;
-  border: 1px solid #e8ddd6;
-  border-radius: 20px;
-  background: #fff;
-}
-
-.month-picker > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.month-picker span {
-  font-size: 10px;
-  color: #8c8580;
-}
-
-.month-picker strong {
-  text-transform: capitalize;
-  font-size: 15px;
-}
-
-.month-arrow {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 14px;
-  background: #f1e3dc;
-  color: #17372f;
-  font-size: 27px;
-  cursor: pointer;
-}
-
-.global-section {
-  padding: 18px;
-  margin-bottom: 22px;
-  border-radius: 24px;
   background: #17372f;
   color: #fff;
 }
 
-.section-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
+.hero-label {
+  margin: 0 0 7px;
 
-.global-section .eyebrow {
-  color: #d7bfb3;
-}
-
-.global-section h2 {
-  color: #fff;
-  font-size: 21px;
-}
-
-.global-badge {
-  padding: 6px 9px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
-  font-size: 10px;
-}
-
-.global-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-
-.global-summary .summary-card {
-  border: 1px solid #e1cec2;
-  background: #fff;
-}
-
-.global-summary .summary-card span {
-  color: #806e65;
-}
-
-.global-summary .summary-card strong {
-  color: #17372f;
-}
-
-.company-overview-list {
-  display: grid;
-  gap: 8px;
-}
-
-.company-overview-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid #e1cec2;
-  border-radius: 14px;
-  background: #fff;
-  color: #17372f;
-}
-
-.company-overview-card > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.company-overview-card span {
-  font-size: 10px;
-  color: #806e65;
-}
-
-.company-overview-values {
-  text-align: right;
-}
-
-.companies-section {
-  margin-bottom: 24px;
-}
-
-.companies-section h2 {
-  margin-bottom: 14px;
-  font-size: 20px;
-}
-
-.company-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
-}
-
-.company-button {
-  min-width: 0;
-  padding: 15px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid #e7ddd6;
-  border-radius: 18px;
-  background: #fff;
-  color: #17372f;
-  font-family: inherit;
   font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
+
+  color: #d6c2b9;
 }
 
-.company-button.active {
-  border-color: #17372f;
-  background: #17372f;
-  color: #fff;
+.hero-card h2 {
+  margin: 0;
+
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size: 43px;
+  font-weight: 400;
 }
 
-.company-icon {
-  width: 34px;
-  height: 34px;
+.hero-subtitle {
+  margin: 5px 0 0;
+
+  font-size: 12px;
+
+  color: #c8d1cd;
+}
+
+.hero-line {
+  height: 1px;
+
+  margin: 22px 0 17px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.15
+    );
+}
+
+.hero-times {
   display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
-  font-weight: 700;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 15px;
 }
 
-.company-button.active .company-icon {
-  background: #f7f1ec;
+.hero-times div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.hero-times span {
+  font-size: 10px;
+
+  color: #c8d1cd;
+}
+
+.hero-times strong {
+  font-size: 16px;
+}
+
+.summary-section,
+.hours-section {
+  margin-top: 29px;
+}
+
+.section-heading {
+  display: flex;
+
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 13px;
+}
+
+.section-heading h2 {
+  margin: 0;
+
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.see-more {
+  padding-bottom: 2px;
+
+  color: #755e53;
+
+  font-size: 11px;
+
+  text-decoration: none;
 }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 25px;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 11px;
 }
 
 .summary-card {
   padding: 18px;
-  border: 1px solid #ede5df;
-  border-radius: 20px;
-  background: #fff;
-}
 
-.salary-card {
-  grid-column: 1 / -1;
+  border:
+    1px solid
+    #eadfd8;
+
+  border-radius: 20px;
+
+  background: #fff;
 }
 
 .summary-card span {
   display: block;
-  margin-bottom: 6px;
+
+  margin-bottom: 7px;
+
+  color: #8b8580;
+
   font-size: 11px;
-  color: #8c8580;
 }
 
 .summary-card strong {
-  font-size: 22px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 15px;
-  margin-bottom: 14px;
-}
-
-.section-header h2 {
-  font-size: 21px;
-}
-
-.add-button {
-  padding: 11px 15px;
-  border: 0;
-  border-radius: 14px;
-  background: #c66b50;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.add-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.empty-card {
-  padding: 30px 20px;
-  border: 1px solid #ede5df;
-  border-radius: 20px;
-  background: #fff;
-  text-align: center;
-  color: #8b8581;
-}
-
-.empty-card strong {
-  display: block;
-  margin-bottom: 5px;
-  color: #17372f;
-}
-
-.empty-card p {
-  margin: 0;
-  font-size: 12px;
-}
-
-.empty-avatar {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 12px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
   font-size: 20px;
-}
 
-.employee-card {
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid #ede5df;
-  border-radius: 21px;
-  background: #fff;
-}
-
-.employee-main {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.employee-avatar {
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.employee-info {
-  min-width: 0;
-}
-
-.employee-info h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.employee-info p {
-  margin: 3px 0;
-  font-size: 12px;
-  color: #8e8782;
-}
-
-.employee-info > span {
-  font-size: 11px;
-  color: #755f54;
-}
-
-.employee-companies {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 7px;
-}
-
-.mini-company-badge {
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: #edf2ef;
-  color: #17372f !important;
-  font-size: 9px !important;
-  font-weight: 700;
-}
-
-.employee-month-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 13px;
-}
-
-.employee-month-summary > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 11px 12px;
-  border-radius: 13px;
-  background: #f7f1ec;
-}
-
-.employee-month-summary small {
-  font-size: 9px;
-  color: #8c8580;
-}
-
-.employee-month-summary span,
-.employee-month-summary strong {
-  font-size: 13px;
-}
-
-.employee-total {
-  text-align: right;
-}
-
-.employee-salary-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 8px;
-  padding: 9px 11px;
-  border-radius: 12px;
-  background: #f1e3dc;
-  font-size: 11px;
-}
-
-.employee-actions {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 7px;
-  margin-top: 14px;
-}
-
-.hours-button,
-.small-button {
-  padding: 9px 10px;
-  border-radius: 11px;
-  font-family: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.hours-button {
-  border: 0;
-  background: #17372f;
-  color: #fff;
-}
-
-.small-button {
-  border: 1px solid #ded4cd;
-  background: #fff;
   color: #17372f;
 }
 
-.small-button.delete {
-  color: #b34f3d;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
+.hours-card {
   padding: 20px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(23, 55, 47, 0.35);
+
+  border:
+    1px solid
+    #eadfd8;
+
+  border-radius: 24px;
+
+  background: #fff;
 }
 
-.higher-modal {
-  z-index: 200;
+.company-field {
+  margin-bottom: 20px;
 }
 
-.modal-card {
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 22px;
-  border-radius: 26px 26px 18px 18px;
-  background: #fdfaf7;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 16px;
-}
-
-.modal-header h2 {
-  font-size: 22px;
-}
-
-.close-button {
-  width: 35px;
-  height: 35px;
-  border: 0;
-  border-radius: 50%;
-  background: #efe5df;
-  color: #17372f;
-  font-size: 23px;
-  cursor: pointer;
-}
-
-.form-help {
-  margin: -5px 0 16px;
-  padding: 11px 12px;
-  border-radius: 13px;
-  background: #f1e7e1;
-  color: #755f54;
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.employee-form {
-  display: grid;
-  gap: 14px;
-}
-
-.employee-form label > span,
-.companies-fieldset legend {
+.company-field label {
   display: block;
+
   margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 600;
+
+  font-size: 10px;
+
+  color: #817b76;
 }
 
-.employee-form input,
-.employee-form select {
+.company-field select {
   width: 100%;
-  padding: 13px 14px;
-  border: 1px solid #ded4cd;
+  min-height: 49px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid
+    #ddd2ca;
+
   border-radius: 14px;
+
   outline: none;
-  background: #fff;
+
+  background: #faf7f4;
+
+  font-family: inherit;
+
   color: #17372f;
-  font: inherit;
 }
 
-.companies-fieldset {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  border: 0;
+.company-field select:disabled {
+  opacity: 1;
+  cursor: default;
 }
 
-.company-check {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 12px;
-  border: 1px solid #e7ddd6;
-  border-radius: 13px;
-  background: #fff;
-}
+.company-help {
+  margin: 8px 2px 0;
 
-.company-check input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}
+  font-size: 10px;
 
-.company-check span {
-  margin: 0 !important;
+  color: #a84f40;
 }
 
 .time-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+
+  grid-template-columns:
+    1fr 1fr;
+
+  gap: 11px;
 }
 
-.calculated-hours {
-  display: flex;
-  justify-content: space-between;
-  padding: 13px 14px;
+.time-grid label {
+  min-width: 0;
+}
+
+.time-grid label span {
+  display: block;
+
+  margin-bottom: 6px;
+
+  font-size: 10px;
+
+  color: #817b76;
+}
+
+.time-grid input {
+  width: 100%;
+  min-height: 49px;
+
+  padding: 0 12px;
+
+  border:
+    1px solid
+    #ddd2ca;
+
   border-radius: 14px;
-  background: #efe5df;
-}
 
-.form-error {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #f8e4df;
-  color: #a54e3b;
-  font-size: 12px;
-}
+  outline: none;
 
-.modal-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+  background: #faf7f4;
 
-.cancel-button,
-.save-button {
-  padding: 13px;
-  border-radius: 14px;
   font-family: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
 
-.cancel-button {
-  border: 1px solid #ded4cd;
-  background: #fff;
   color: #17372f;
 }
 
-.save-button {
-  border: 0;
-  background: #17372f;
-  color: #fff;
+.pause-title {
+  margin:
+    20px
+    0
+    10px;
+
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.hours-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+.pause-title span {
+  margin-left: 5px;
+
+  font-size: 9px;
+  font-weight: 400;
+
+  color: #9b938d;
 }
 
-.hours-summary > div {
-  padding: 14px;
-  border-radius: 15px;
-  background: #f1e7e1;
-}
-
-.hours-summary span {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 10px;
-  color: #8c8580;
-}
-
-.employee-company-breakdown {
-  display: grid;
-  gap: 7px;
-  margin-bottom: 14px;
-}
-
-.employee-company-breakdown article {
+.worked-preview {
   display: flex;
+
   justify-content: space-between;
-  gap: 10px;
-  padding: 9px 11px;
-  border: 1px solid #e7ddd6;
-  border-radius: 12px;
-  background: #fff;
+  align-items: center;
+
+  margin-top: 20px;
+
+  padding: 14px 15px;
+
+  border-radius: 15px;
+
+  background: #f1e3dc;
+}
+
+.worked-preview span {
   font-size: 11px;
 }
 
-.add-hours-button {
+.worked-preview strong {
+  font-size: 16px;
+}
+
+.save-button {
   width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
+  min-height: 54px;
+
+  margin-top: 16px;
+
   border: 0;
-  border-radius: 14px;
+  border-radius: 17px;
+
   background: #c66b50;
   color: #fff;
+
+  font-family: inherit;
+
+  font-size: 14px;
   font-weight: 700;
+
   cursor: pointer;
 }
 
-.time-entry-card {
-  padding: 14px;
-  margin-bottom: 10px;
-  border: 1px solid #e7ddd6;
-  border-radius: 17px;
-  background: #fff;
+.save-button:disabled {
+  opacity: 0.6;
+
+  cursor: wait;
 }
 
-.time-entry-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
+.message {
+  margin:
+    14px
+    0
+    0;
 
-.time-entry-top p,
-.pause-line {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #847d78;
-}
+  padding: 11px 13px;
 
-.entry-company {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 5px 8px;
-  border-radius: 9px;
-  background: #edf2ef;
-  font-size: 10px;
-  font-weight: 700;
-}
+  border-radius: 12px;
 
-.worked-badge {
-  height: fit-content;
-  padding: 6px 9px;
-  border-radius: 10px;
-  background: #edf2ef;
   font-size: 11px;
-  font-weight: 700;
 }
 
-.time-entry-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 7px;
-  margin-top: 12px;
+.error {
+  background: #f9e7e3;
+
+  color: #a84f40;
 }
 
-@media (max-width: 420px) {
-  .admin-page {
-    padding-left: 14px;
-    padding-right: 14px;
+.success {
+  background: #eaf2ed;
+
+  color: #305f4e;
+}
+
+@media (max-width: 360px) {
+  .home-page {
+    padding-left: 15px;
+    padding-right: 15px;
   }
 
-  .topbar h1 {
-    font-size: 24px;
+  .hero-card {
+    padding: 21px;
   }
 
-  .global-summary,
-  .hours-summary,
-  .employee-month-summary {
-    grid-template-columns: 1fr 1fr;
+  .hero-card h2 {
+    font-size: 38px;
   }
 
-  .time-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .employee-actions {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .hours-button {
-    grid-column: 1 / -1;
+  .summary-card {
+    padding: 15px;
   }
 }
-
-/* =========================
-   NAVBAR ADMIN
-========================= */
-
-.admin-bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 90;
-  width: calc(100% - 28px);
-  max-width: 490px;
-  height: 68px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  padding: 7px;
-  border: 1px solid #e4d8d0;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow:
-    0 8px 30px rgba(23, 55, 47, 0.10),
-    0 2px 8px rgba(23, 55, 47, 0.05);
-}
-
-.admin-nav-item {
-  height: 54px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  border-radius: 16px;
-  color: #9a918c;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.admin-nav-icon {
-  font-size: 19px;
-  line-height: 1;
-}
-
-.admin-nav-item.active {
-  background: #17372f;
-  color: #fff;
-}
-
 </style>

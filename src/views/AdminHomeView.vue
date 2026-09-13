@@ -105,24 +105,7 @@
       </article>
     </section>
 
-
-    <nav class="admin-bottom-nav">
-      <RouterLink to="/admin" class="admin-nav-item" exact-active-class="active">
-        <span class="admin-nav-icon">⌂</span>
-        <span>Accueil</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/equipe" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙♙</span>
-        <span>Équipe</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/profile" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙</span>
-        <span>Profil</span>
-      </RouterLink>
-    </nav>
-
+    <AdminBottomNav />
   </main>
 </template>
 
@@ -139,6 +122,7 @@ import {
   useRouter,
 } from 'vue-router'
 
+import AdminBottomNav from '../components/AdminBottomNav.vue'
 import { supabase } from '../lib/supabase'
 
 interface Company {
@@ -445,9 +429,7 @@ const loadData = async () => {
       ),
 
     supabase
-      .from(
-        'employee_time_entries'
-      )
+      .from('all_employee_time_entries')
       .select(
         'id, employee_id, company_id, work_date, worked_minutes'
       )

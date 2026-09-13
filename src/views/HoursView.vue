@@ -4,57 +4,103 @@
       <div>
         <p class="eyebrow">Historique</p>
         <h1>Mes horaires</h1>
-        <p class="subtitle">Retrouve toutes tes journées enregistrées</p>
+        <p class="subtitle">
+          Retrouve toutes tes journées enregistrées
+        </p>
       </div>
     </header>
 
-    <section class="filter-card">
+    <!-- FILTRES SOCIÉTÉS -->
+    <section
+      v-if="filters.length > 1"
+      class="filter-card"
+    >
       <button
         v-for="filter in filters"
-        :key="filter"
+        :key="filter.id"
         type="button"
         class="filter-button"
-        :class="{ active: selectedFilter === filter }"
-        @click="selectedFilter = filter"
+        :class="{
+          active: selectedFilter === filter.id
+        }"
+        @click="selectedFilter = filter.id"
       >
-        {{ filter }}
+        {{ filter.name }}
       </button>
     </section>
 
-    <section v-if="filteredEntries.length > 0" class="hours-card">
+    <!-- CHARGEMENT -->
+    <section
+      v-if="loading"
+      class="empty-card"
+    >
+      <p>Chargement des horaires...</p>
+    </section>
+
+    <!-- LISTE -->
+    <section
+      v-else-if="filteredEntries.length > 0"
+      class="hours-card"
+    >
       <article
         v-for="entry in filteredEntries"
         :key="entry.id"
         class="hour-entry"
       >
         <div class="date-box">
-          <strong>{{ getDay(entry.date) }}</strong>
-          <span>{{ getMonth(entry.date) }}</span>
+          <strong>
+            {{ getDay(entry.work_date) }}
+          </strong>
+
+          <span>
+            {{ getMonth(entry.work_date) }}
+          </span>
         </div>
 
         <div class="entry-content">
           <div class="entry-top">
             <div>
-              <h2>{{ formatDate(entry.date) }}</h2>
+              <h2>
+                {{ formatDate(entry.work_date) }}
+              </h2>
+
+              <!-- SOCIÉTÉ -->
+              <div class="company-name">
+                {{ getCompanyName(entry) }}
+              </div>
 
               <p>
-                {{ entry.startTime }} → {{ entry.endTime }}
+                {{ formatTime(entry.start_time) }}
+                →
+                {{ formatTime(entry.end_time) }}
               </p>
             </div>
 
-            <span class="status validated">
-              Enregistré
+            <span
+              class="status"
+              :class="entry.status"
+            >
+              {{ getStatusLabel(entry.status) }}
             </span>
           </div>
 
           <div class="entry-bottom">
             <span>
               Pause :
-              {{ getPauseDuration(entry.pauseStart, entry.pauseEnd) }}
+              {{
+                getPauseDuration(
+                  entry.pause_start,
+                  entry.pause_end
+                )
+              }}
             </span>
 
             <strong>
-              {{ formatWorkedTime(entry.workedMinutes) }}
+              {{
+                formatWorkedTime(
+                  entry.worked_minutes
+                )
+              }}
             </strong>
           </div>
         </div>
@@ -62,15 +108,19 @@
         <button
           type="button"
           class="delete-button"
+          aria-label="Supprimer les horaires"
           @click="removeEntry(entry.id)"
-          aria-label="Supprimer la journée"
         >
           ×
         </button>
       </article>
     </section>
 
-    <section v-else class="empty-card">
+    <!-- VIDE -->
+    <section
+      v-else
+      class="empty-card"
+    >
       <div class="empty-icon">
         ◷
       </div>
@@ -81,129 +131,348 @@
         Tes journées enregistrées apparaîtront ici.
       </p>
 
-      <RouterLink to="/home" class="add-button">
+      <RouterLink
+        to="/home"
+        class="add-button"
+      >
         Saisir mes horaires
       </RouterLink>
     </section>
 
-    <nav class="bottom-nav">
-      <RouterLink to="/home" class="nav-item">
-        <span>⌂</span>
-        <small>Accueil</small>
-      </RouterLink>
-
-      <RouterLink to="/hours" class="nav-item active">
-        <span>◫</span>
-        <small>Horaires</small>
-      </RouterLink>
-
-      <RouterLink to="/month" class="nav-item">
-        <span>▦</span>
-        <small>Mon mois</small>
-      </RouterLink>
-
-      <RouterLink to="/profile" class="nav-item">
-        <span>○</span>
-        <small>Profil</small>
-      </RouterLink>
-    </nav>
+    <!-- NAVBAR -->
+   <EmployeeBottomNav />
   </main>
 </template>
 
 <script setup lang="ts">
-import { computed, 
-ref,
-onMounted,
- } from 'vue'
+import {
+  computed,
+  onMounted,
+  ref,
+} from 'vue'
 
 import {
-  getTimeEntries,
-  deleteTimeEntry,
-  type TimeEntry,
-} from '../services/timeEntries'
+  RouterLink,
+  useRouter,
+} from 'vue-router'
 
-const selectedFilter = ref('Tous')
+import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
+import { supabase } from '../lib/supabase'
 
-const filters = ['Tous']
+interface Company {
+  id?: string
+  name: string
+}
+
+interface TimeEntry {
+  id: string
+  user_id: string
+  company_id: string | null
+  work_date: string
+  start_time: string
+  pause_start: string | null
+  pause_end: string | null
+  end_time: string
+  worked_minutes: number
+  status: string
+  company: Company | null
+}
+
+interface Filter {
+  id: string
+  name: string
+}
+
+const router = useRouter()
 
 const entries = ref<TimeEntry[]>([])
 
-onMounted(async () => {
-  entries.value = await getTimeEntries()
+const loading = ref(true)
+
+const selectedFilter = ref('all')
+
+const filters = computed<Filter[]>(() => {
+  const companies = new Map<string, string>()
+
+  entries.value.forEach((entry) => {
+    if (
+      entry.company_id &&
+      entry.company?.name
+    ) {
+      companies.set(
+        entry.company_id,
+        entry.company.name
+      )
+    }
+  })
+
+  return [
+    {
+      id: 'all',
+      name: 'Toutes',
+    },
+
+    ...Array.from(
+      companies.entries()
+    ).map(([id, name]) => ({
+      id,
+      name,
+    })),
+  ]
 })
 
 const filteredEntries = computed(() => {
-  return [...entries.value].sort((a, b) =>
-    b.date.localeCompare(a.date)
-  )
+  const list =
+    selectedFilter.value === 'all'
+      ? entries.value
+      : entries.value.filter(
+          (entry) =>
+            entry.company_id ===
+            selectedFilter.value
+        )
+
+  return [...list].sort((a, b) => {
+    const dateCompare =
+      b.work_date.localeCompare(
+        a.work_date
+      )
+
+    if (dateCompare !== 0) {
+      return dateCompare
+    }
+
+    return (
+      b.start_time ?? ''
+    ).localeCompare(
+      a.start_time ?? ''
+    )
+  })
 })
 
-const formatWorkedTime = (minutes: number) => {
-  const hours = Math.floor(minutes / 60)
-  const remainingMinutes = minutes % 60
+const loadEntries = async () => {
+  loading.value = true
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    loading.value = false
+    await router.push('/')
+    return
+  }
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('time_entries')
+    .select(`
+      id,
+      user_id,
+      company_id,
+      work_date,
+      start_time,
+      pause_start,
+      pause_end,
+      end_time,
+      worked_minutes,
+      status,
+      company:companies (
+        name
+      )
+    `)
+    .eq('user_id', user.id)
+    .order(
+      'work_date',
+      {
+        ascending: false,
+      }
+    )
+    .order(
+      'start_time',
+      {
+        ascending: false,
+      }
+    )
+
+  loading.value = false
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  entries.value =
+    (data ?? []) as unknown as TimeEntry[]
+}
+
+const formatWorkedTime = (
+  minutes: number
+) => {
+  const hours =
+    Math.floor(minutes / 60)
+
+  const remainingMinutes =
+    minutes % 60
 
   if (remainingMinutes === 0) {
     return `${hours} h`
   }
 
-  return `${hours} h ${remainingMinutes
-    .toString()
-    .padStart(2, '0')}`
+  return `${hours} h ${String(
+    remainingMinutes
+  ).padStart(2, '0')}`
+}
+
+const formatTime = (
+  time: string | null
+) => {
+  if (!time) {
+    return '--:--'
+  }
+
+  return time.slice(0, 5)
 }
 
 const getPauseDuration = (
-  pauseStart: string,
-  pauseEnd: string
+  pauseStart: string | null,
+  pauseEnd: string | null
 ) => {
-  const toMinutes = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number)
+  if (
+    !pauseStart ||
+    !pauseEnd
+  ) {
+    return 'Aucune'
+  }
 
-    return hours * 60 + minutes
+  const toMinutes = (
+    time: string
+  ) => {
+    const [hours, minutes] =
+      time
+        .slice(0, 5)
+        .split(':')
+        .map(Number)
+
+    return (
+      hours * 60 +
+      minutes
+    )
   }
 
   const duration =
-    toMinutes(pauseEnd) - toMinutes(pauseStart)
+    toMinutes(pauseEnd) -
+    toMinutes(pauseStart)
+
+  if (duration <= 0) {
+    return 'Aucune'
+  }
 
   return formatWorkedTime(duration)
 }
 
-const formatDate = (date: string) => {
-  const value = new Date(`${date}T12:00:00`)
+const formatDate = (
+  date: string
+) => {
+  const value =
+    new Date(
+      `${date}T12:00:00`
+    )
 
-  return new Intl.DateTimeFormat('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  }).format(value)
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }
+  ).format(value)
 }
 
-const getDay = (date: string) => {
+const getDay = (
+  date: string
+) => {
   return date.split('-')[2]
 }
 
-const getMonth = (date: string) => {
-  const value = new Date(`${date}T12:00:00`)
+const getMonth = (
+  date: string
+) => {
+  const value =
+    new Date(
+      `${date}T12:00:00`
+    )
 
-  return new Intl.DateTimeFormat('fr-FR', {
-    month: 'short',
-  })
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      month: 'short',
+    }
+  )
     .format(value)
     .replace('.', '')
     .toUpperCase()
 }
-const removeEntry = async (id: string) => {
-  const confirmed = window.confirm(
-    'Supprimer cette journée ?'
+
+const getCompanyName = (
+  entry: TimeEntry
+) => {
+  return (
+    entry.company?.name ??
+    'Société non renseignée'
   )
+}
+
+const getStatusLabel = (
+  status: string
+) => {
+  if (status === 'validated') {
+    return 'Validé'
+  }
+
+  if (status === 'rejected') {
+    return 'Refusé'
+  }
+
+  return 'Enregistré'
+}
+
+const removeEntry = async (
+  id: string
+) => {
+  const confirmed =
+    window.confirm(
+      'Supprimer ces horaires ?'
+    )
 
   if (!confirmed) {
     return
   }
 
-  await deleteTimeEntry(id)
+  const {
+    error,
+  } = await supabase
+    .from('time_entries')
+    .delete()
+    .eq('id', id)
 
-  entries.value = await getTimeEntries()
+  if (error) {
+    console.error(error)
+
+    window.alert(
+      'Impossible de supprimer ces horaires.'
+    )
+
+    return
+  }
+
+  await loadEntries()
 }
+
+onMounted(async () => {
+  await loadEntries()
+})
 </script>
 
 <style scoped>
@@ -236,6 +505,7 @@ const removeEntry = async (id: string) => {
 
   font-size: 12px;
   font-weight: 600;
+
   text-transform: uppercase;
   letter-spacing: 1.2px;
 
@@ -258,16 +528,28 @@ const removeEntry = async (id: string) => {
   color: #7d7874;
 }
 
+/* FILTRES */
+
 .filter-card {
   display: flex;
 
   gap: 8px;
 
   margin-bottom: 16px;
+
+  overflow-x: auto;
+
+  scrollbar-width: none;
+}
+
+.filter-card::-webkit-scrollbar {
+  display: none;
 }
 
 .filter-button {
   min-height: 40px;
+
+  flex-shrink: 0;
 
   padding: 0 16px;
 
@@ -276,6 +558,8 @@ const removeEntry = async (id: string) => {
 
   background: white;
   color: #746e6a;
+
+  font-family: inherit;
 
   font-weight: 600;
 
@@ -286,6 +570,8 @@ const removeEntry = async (id: string) => {
   background: #17372f;
   color: white;
 }
+
+/* LISTE */
 
 .hours-card {
   display: flex;
@@ -335,6 +621,7 @@ const removeEntry = async (id: string) => {
   margin-top: 1px;
 
   font-size: 10px;
+
   letter-spacing: 1px;
 
   color: #8a7970;
@@ -342,6 +629,7 @@ const removeEntry = async (id: string) => {
 
 .entry-content {
   flex: 1;
+
   min-width: 0;
 }
 
@@ -364,15 +652,38 @@ const removeEntry = async (id: string) => {
 }
 
 .entry-top p {
-  margin: 4px 0 0;
+  margin: 5px 0 0;
 
   font-size: 12px;
 
   color: #99918c;
 }
 
+/* SOCIÉTÉ */
+
+.company-name {
+  width: fit-content;
+
+  margin-top: 6px;
+
+  padding: 4px 8px;
+
+  border-radius: 999px;
+
+  background: #f1e3dc;
+
+  color: #8c5c4b;
+
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* STATUT */
+
 .status {
   height: fit-content;
+
+  flex-shrink: 0;
 
   padding: 5px 8px;
 
@@ -384,16 +695,34 @@ const removeEntry = async (id: string) => {
   white-space: nowrap;
 }
 
+.status.pending {
+  background: #f7eee5;
+
+  color: #9d6c51;
+}
+
 .status.validated {
   background: #e9f2ec;
+
   color: #4f765f;
 }
 
+.status.rejected {
+  background: #f8e6e3;
+
+  color: #a34f43;
+}
+
+/* BAS CARTE */
+
 .entry-bottom {
   margin-top: 14px;
+
   padding-top: 12px;
 
-  border-top: 1px solid #f0ebe7;
+  border-top:
+    1px solid
+    #f0ebe7;
 
   display: flex;
 
@@ -413,6 +742,8 @@ const removeEntry = async (id: string) => {
 
   color: #17372f;
 }
+
+/* SUPPRIMER */
 
 .delete-button {
   position: absolute;
@@ -447,12 +778,17 @@ const removeEntry = async (id: string) => {
   color: #a24d3d;
 }
 
+/* VIDE */
+
 .empty-card {
   padding: 42px 25px;
 
   background: white;
 
-  border: 1px solid #ede5df;
+  border:
+    1px solid
+    #ede5df;
+
   border-radius: 24px;
 
   text-align: center;
@@ -462,9 +798,13 @@ const removeEntry = async (id: string) => {
   width: 62px;
   height: 62px;
 
-  margin: 0 auto 18px;
+  margin:
+    0
+    auto
+    18px;
 
   display: grid;
+
   place-items: center;
 
   border-radius: 50%;
@@ -488,6 +828,7 @@ const removeEntry = async (id: string) => {
   margin: 8px 0 22px;
 
   font-size: 13px;
+
   line-height: 1.5;
 
   color: #8c8580;
@@ -499,6 +840,7 @@ const removeEntry = async (id: string) => {
   padding: 0 22px;
 
   display: inline-flex;
+
   align-items: center;
   justify-content: center;
 
@@ -514,61 +856,4 @@ const removeEntry = async (id: string) => {
   text-decoration: none;
 }
 
-.bottom-nav {
-  position: fixed;
-
-  left: 50%;
-  bottom: 16px;
-
-  width: calc(100% - 30px);
-  max-width: 460px;
-
-  transform: translateX(-50%);
-
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-
-  padding: 8px;
-
-  background: rgba(255, 255, 255, 0.96);
-
-  border: 1px solid #ebe4df;
-  border-radius: 22px;
-}
-
-.nav-item {
-  min-height: 54px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 3px;
-
-  border: none;
-  border-radius: 15px;
-
-  background: transparent;
-
-  color: #8b8581;
-
-  text-decoration: none;
-
-  cursor: pointer;
-}
-
-.nav-item span {
-  font-size: 20px;
-}
-
-.nav-item small {
-  font-size: 11px;
-}
-
-.nav-item.active {
-  background: #f2e9e3;
-
-  color: #17372f;
-}
 </style>

@@ -4,6 +4,9 @@ import {
 } from 'vue-router'
 
 import LoginView from '../views/LoginView.vue'
+import SignupView from '../views/SignupView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
+
 import HomeView from '../views/HomeView.vue'
 import MonthView from '../views/MonthView.vue'
 import HoursView from '../views/HoursView.vue'
@@ -12,6 +15,7 @@ import ProfileView from '../views/ProfileView.vue'
 import AdminHomeView from '../views/AdminHomeView.vue'
 import AdminTeamView from '../views/AdminTeamView.vue'
 import AdminProfileView from '../views/AdminProfileView.vue'
+import AdminHoursView from '../views/AdminHoursView.vue'
 
 import { supabase } from '../lib/supabase'
 
@@ -23,6 +27,18 @@ const router = createRouter({
       path: '/',
       name: 'login',
       component: LoginView,
+    },
+
+    {
+      path: '/signup',
+      name: 'signup',
+      component: SignupView,
+    },
+
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: ResetPasswordView,
     },
 
     {
@@ -59,7 +75,12 @@ const router = createRouter({
       component: AdminHomeView,
       meta: { role: 'admin' },
     },
-
+    {
+  path: '/admin/heures',
+  name: 'admin-hours',
+  component: AdminHoursView,
+  meta: { role: 'admin' },
+},
     {
       path: '/admin/equipe',
       name: 'admin-team',
@@ -82,7 +103,13 @@ router.beforeEach(async (to) => {
   } = await supabase.auth.getSession()
 
   if (!session) {
-    if (to.path !== '/') {
+    const publicRoutes = [
+      '/',
+      '/signup',
+      '/reset-password',
+    ]
+
+    if (!publicRoutes.includes(to.path)) {
       return '/'
     }
 
@@ -111,6 +138,11 @@ router.beforeEach(async (to) => {
   }
 
   const role = profile.role
+
+  // On laisse toujours passer la page de réinitialisation
+  if (to.path === '/reset-password') {
+    return true
+  }
 
   if (to.path === '/') {
     if (role === 'admin') {

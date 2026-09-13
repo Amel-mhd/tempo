@@ -40,29 +40,15 @@
       </button>
     </section>
 
-    <nav class="admin-bottom-nav">
-      <RouterLink to="/admin" class="admin-nav-item" exact-active-class="active">
-        <span class="admin-nav-icon">⌂</span>
-        <span>Accueil</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/equipe" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙♙</span>
-        <span>Équipe</span>
-      </RouterLink>
-
-      <RouterLink to="/admin/profile" class="admin-nav-item" active-class="active">
-        <span class="admin-nav-icon">♙</span>
-        <span>Profil</span>
-      </RouterLink>
-    </nav>
+  <AdminBottomNav />
   </main>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { supabase } from '../lib/supabase'
+import AdminBottomNav from '../components/AdminBottomNav.vue'
 
 const router = useRouter()
 const firstName = ref('')
