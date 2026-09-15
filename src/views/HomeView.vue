@@ -1316,36 +1316,31 @@ onMounted(async () => {
 }
 /* ===== CORRECTION HORAIRES SUR MOBILE ===== */
 
-@media (max-width: 480px) {
+/* Champs horaires toujours les uns sous les autres */
+.time-row,
+.time-grid,
+.hours-row,
+.hours-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  width: 100% !important;
+  gap: 16px !important;
+}
 
-  /* Les lignes contenant Début / Fin */
-  .time-grid,
-  .time-row,
-  .hours-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-    width: 100% !important;
-  }
+.time-row > *,
+.time-grid > *,
+.hours-row > *,
+.hours-grid > * {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
 
-  /* Chaque bloc horaire */
-  .time-field,
-  .field,
-  .form-group {
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-  }
-
-  /* Safari iPhone impose parfois une largeur aux input time */
-  input[type="time"] {
-    display: block !important;
-
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-
-    box-sizing: border-box !important;
-  }
+input[type="time"] {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
 }
 </style>
