@@ -1316,31 +1316,39 @@ onMounted(async () => {
 }
 /* ===== CORRECTION HORAIRES SUR MOBILE ===== */
 
-/* Champs horaires toujours les uns sous les autres */
-.time-row,
-.time-grid,
-.hours-row,
-.hours-grid {
-  display: grid !important;
-  grid-template-columns: 1fr !important;
+/* HORAIRES EN COLONNE - MÊME LARGEUR QUE SOCIÉTÉ */
+
+.time-grid {
+  display: flex !important;
+  flex-direction: column !important;
   width: 100% !important;
   gap: 16px !important;
 }
 
-.time-row > *,
-.time-grid > *,
-.hours-row > *,
-.hours-grid > * {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-}
-
-input[type="time"] {
+.time-grid label {
   display: block !important;
   width: 100% !important;
   min-width: 0 !important;
+}
+
+.time-grid input[type="time"] {
+  display: block !important;
+  width: 100% !important;
+  min-width: 100% !important;
   max-width: 100% !important;
+
+  min-height: 49px;
+
+  padding: 0 12px;
+
   box-sizing: border-box !important;
+
+  border: 1px solid #ddd2ca;
+  border-radius: 14px;
+
+  background: #faf7f4;
+  color: #17372f;
+
+  font-family: inherit;
 }
 </style>
