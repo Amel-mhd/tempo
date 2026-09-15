@@ -1314,8 +1314,7 @@ onMounted(async () => {
 
   color: #305f4e;
 }
-
-@media (max-width: 360px) {
+@media (max-width: 480px) {
   .home-page {
     padding-left: 15px;
     padding-right: 15px;
@@ -1332,20 +1331,31 @@ onMounted(async () => {
   .summary-card {
     padding: 15px;
   }
-  /* Correction affichage mobile des champs horaires */
-@media (max-width: 480px) {
-  input[type="time"],
-  input[type="date"],
-  select {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
-   }
 
-  input[type="time"] {
+  .hours-card {
+    padding: 16px;
+  }
+
+  .time-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    width: 100%;
+  }
+
+  .time-grid label {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .time-grid input[type="time"] {
     display: block;
-   }
- }
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 </style>
