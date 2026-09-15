@@ -1318,10 +1318,19 @@ onMounted(async () => {
 
 /* HORAIRES EN COLONNE - MÊME LARGEUR QUE SOCIÉTÉ */
 
+/* ===== CORRECTION DÉFINITIVE DES HORAIRES ===== */
+
+.hours-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
 .time-grid {
-  display: flex !important;
-  flex-direction: column !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
   width: 100% !important;
+  min-width: 0 !important;
   gap: 16px !important;
 }
 
@@ -1329,17 +1338,21 @@ onMounted(async () => {
   display: block !important;
   width: 100% !important;
   min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden;
 }
 
 .time-grid input[type="time"] {
   display: block !important;
+
   width: 100% !important;
-  min-width: 100% !important;
+  min-width: 0 !important;
   max-width: 100% !important;
 
-  min-height: 49px;
+  height: 49px !important;
 
-  padding: 0 12px;
+  padding: 0 12px !important;
+  margin: 0 !important;
 
   box-sizing: border-box !important;
 
@@ -1350,5 +1363,8 @@ onMounted(async () => {
   color: #17372f;
 
   font-family: inherit;
+
+  -webkit-appearance: none;
+  appearance: none;
 }
 </style>
