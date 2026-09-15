@@ -1337,15 +1337,16 @@ onMounted(async () => {
   }
 
   .time-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 10px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
     width: 100%;
   }
 
   .time-grid label {
+    display: block;
     width: 100%;
     min-width: 0;
-    overflow: hidden;
   }
 
   .time-grid input[type="time"] {
@@ -1353,9 +1354,9 @@ onMounted(async () => {
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    height: 49px;
     box-sizing: border-box;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding: 0 12px;
   }
 }
 </style>
