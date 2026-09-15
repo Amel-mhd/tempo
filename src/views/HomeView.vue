@@ -1332,5 +1332,20 @@ onMounted(async () => {
   .summary-card {
     padding: 15px;
   }
+  /* Correction affichage mobile des champs horaires */
+@media (max-width: 480px) {
+  input[type="time"],
+  input[type="date"],
+  select {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+   }
+
+  input[type="time"] {
+    display: block;
+   }
+ }
 }
 </style>
