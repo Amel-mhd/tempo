@@ -1314,49 +1314,38 @@ onMounted(async () => {
 
   color: #305f4e;
 }
+/* ===== CORRECTION HORAIRES SUR MOBILE ===== */
+
 @media (max-width: 480px) {
-  .home-page {
-    padding-left: 15px;
-    padding-right: 15px;
+
+  /* Les lignes contenant Début / Fin */
+  .time-grid,
+  .time-row,
+  .hours-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    width: 100% !important;
   }
 
-  .hero-card {
-    padding: 21px;
+  /* Chaque bloc horaire */
+  .time-field,
+  .field,
+  .form-group {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
-  .hero-card h2 {
-    font-size: 38px;
-  }
+  /* Safari iPhone impose parfois une largeur aux input time */
+  input[type="time"] {
+    display: block !important;
 
-  .summary-card {
-    padding: 15px;
-  }
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
 
-  .hours-card {
-    padding: 16px;
-  }
-
-  .time-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 14px;
-    width: 100%;
-  }
-
-  .time-grid label {
-    display: block;
-    width: 100%;
-    min-width: 0;
-  }
-
-  .time-grid input[type="time"] {
-    display: block;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    height: 49px;
-    box-sizing: border-box;
-    padding: 0 12px;
+    box-sizing: border-box !important;
   }
 }
 </style>
