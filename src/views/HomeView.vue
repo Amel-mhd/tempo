@@ -21,22 +21,39 @@
         <h2>{{ workedTimeLabel }}</h2>
 
         <p class="hero-subtitle">
-          {{ todayEntry ? 'Temps travaillé enregistré' : 'Aucune heure enregistrée' }}
-        </p>
+  {{
+    todayTotalMinutes > 0
+      ? 'Temps travaillé enregistré'
+      : 'Aucune heure enregistrée'
+  }}
+</p>
 
         <div class="hero-line"></div>
 
-        <div class="hero-times">
-          <div>
-            <span>Début</span>
-            <strong>{{ form.startTime || '--:--' }}</strong>
-          </div>
+    <div class="hero-company-times">
+  <div
+    v-for="entry in todayEntries"
+    :key="entry.id"
+    class="hero-company-row"
+  >
+    <span class="hero-company-name">
+      {{ getCompanyName(entry.company_id) }}
+    </span>
 
-          <div>
-            <span>Fin</span>
-            <strong>{{ form.endTime || '--:--' }}</strong>
-          </div>
-        </div>
+    <strong>
+      {{ entry.start_time.slice(0, 5) }}
+      →
+      {{ entry.end_time.slice(0, 5) }}
+    </strong>
+  </div>
+
+  <p
+    v-if="todayEntries.length === 0"
+    class="hero-no-hours"
+  >
+    Aucun horaire enregistré aujourd’hui
+  </p>
+</div>
       </section>
 
       <!-- RÉSUMÉ DU MOIS -->
@@ -422,19 +439,54 @@ const calculatedWorkedLabel =
     )
   )
 
-const workedTimeLabel =
-  computed(() => {
-    if (!todayEntry.value) {
-      return '0 h'
-    }
-
-    return formatMinutes(
-      Number(
-        todayEntry.value.worked_minutes ??
-        0
-      )
+const todayTotalMinutes = computed(() => {
+  return monthEntries.value
+    .filter(
+      (entry) =>
+        entry.work_date === today
     )
-  })
+    .reduce(
+      (total, entry) =>
+        total +
+        Number(entry.worked_minutes ?? 0),
+      0
+    )
+})
+
+const todayEntries = computed(() => {
+  return monthEntries.value
+    .filter(
+      (entry) =>
+        entry.work_date === today
+    )
+    .sort(
+      (a, b) =>
+        a.start_time.localeCompare(
+          b.start_time
+        )
+    )
+})
+
+const getCompanyName = (
+  companyId: string | null
+) => {
+  if (!companyId) {
+    return 'Société'
+  }
+
+  return (
+    companies.value.find(
+      (company) =>
+        company.id === companyId
+    )?.name ?? 'Société'
+  )
+}
+
+const workedTimeLabel = computed(() => {
+  return formatMinutes(
+    todayTotalMinutes.value
+  )
+})
 
 const monthMinutes =
   computed(() =>
@@ -1016,13 +1068,40 @@ onMounted(async () => {
     );
 }
 
-.hero-times {
-  display: grid;
+.hero-company-times {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
 
-  grid-template-columns:
-    1fr 1fr;
-
+.hero-company-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 15px;
+
+  padding: 10px 12px;
+
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.hero-company-name {
+  font-size: 11px;
+  color: #d6c2b9;
+}
+
+.hero-company-row strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.hero-no-hours {
+  margin: 0;
+  font-size: 11px;
+  color: #c8d1cd;
 }
 
 .hero-times div {

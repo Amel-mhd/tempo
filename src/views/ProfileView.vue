@@ -24,7 +24,7 @@
             {{
               role === 'admin'
                 ? 'Administratrice'
-                : 'Employée'
+                : 'Employé'
             }}
           </p>
         </div>

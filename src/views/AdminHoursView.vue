@@ -12,16 +12,59 @@
       </header>
 
       <section class="filters-card">
-        <label for="month">
-          Mois
-        </label>
+  <div class="filter-field">
+    <label for="month">Mois</label>
 
-        <input
-          id="month"
-          v-model="selectedMonth"
-          type="month"
-        />
-      </section>
+    <input
+      id="month"
+      v-model="selectedMonth"
+      type="month"
+    />
+  </div>
+
+  <div class="filter-field">
+    <label for="employee">Employé</label>
+
+    <select
+      id="employee"
+      v-model="selectedEmployeeId"
+    >
+      <option value="">
+        Tous les employés
+      </option>
+
+      <option
+        v-for="employee in employees"
+        :key="employee.id"
+        :value="employee.id"
+      >
+        {{ employee.first_name }}
+        {{ employee.last_name }}
+      </option>
+    </select>
+  </div>
+
+  <div class="filter-field">
+    <label for="company">Société</label>
+
+    <select
+      id="company"
+      v-model="selectedCompanyId"
+    >
+      <option value="">
+        Toutes les sociétés
+      </option>
+
+      <option
+        v-for="company in companies"
+        :key="company.id"
+        :value="company.id"
+      >
+        {{ company.name }}
+      </option>
+    </select>
+  </div>
+</section>
 
       <section
         v-if="loading"
@@ -211,6 +254,9 @@ const selectedMonth = ref(
   ).padStart(2, '0')}`
 )
 
+const selectedEmployeeId = ref('')
+const selectedCompanyId = ref('')
+
 const today = computed(() => {
   return new Intl.DateTimeFormat(
     'en-CA',
@@ -351,108 +397,101 @@ const loadData = async () => {
   loading.value = false
 }
 
-const employeeSummaries =
-  computed(() => {
-    return employees.value
-      .map((employee) => {
-        const employeeEntries =
-          entries.value
-            .filter(
-              (entry) =>
-                entry.employee_id ===
-                employee.id
-            )
-            .map<EnrichedEntry>(
-              (entry) => ({
-                ...entry,
+const employeeSummaries = computed(() => {
+  return employees.value
+    .filter((employee) => {
+      if (
+        selectedEmployeeId.value &&
+        employee.id !== selectedEmployeeId.value
+      ) {
+        return false
+      }
 
-                company_name:
-                  companies.value.find(
-                    (company) =>
-                      company.id ===
-                      entry.company_id
-                  )?.name ??
-                  'Société inconnue',
-              })
-            )
+      return true
+    })
+    .map((employee) => {
+      const employeeEntries = entries.value
+        .filter((entry) => {
+          if (entry.employee_id !== employee.id) {
+            return false
+          }
 
-        const monthMinutes =
-          employeeEntries.reduce(
-            (
-              total,
-              entry
-            ) =>
-              total +
-              Number(
-                entry.worked_minutes ??
-                  0
-              ),
-            0
-          )
+          if (
+            selectedCompanyId.value &&
+            entry.company_id !== selectedCompanyId.value
+          ) {
+            return false
+          }
 
-        const todayMinutes =
-          employeeEntries
-            .filter(
-              (entry) =>
-                entry.work_date ===
-                today.value
-            )
-            .reduce(
-              (
-                total,
-                entry
-              ) =>
-                total +
-                Number(
-                  entry.worked_minutes ??
-                    0
-                ),
-              0
-            )
+          return true
+        })
+        .map<EnrichedEntry>((entry) => ({
+          ...entry,
 
-        const companyNames =
-          Array.from(
-            new Set(
-              employeeEntries.map(
-                (entry) =>
-                  entry.company_name
-              )
-            )
-          )
+          company_name:
+            companies.value.find(
+              (company) =>
+                company.id === entry.company_id
+            )?.name ?? 'Société inconnue',
+        }))
 
-        return {
-          id: employee.id,
-
-          fullName:
-            `${employee.first_name} ${employee.last_name}`,
-
-          initial:
-            employee.first_name
-              ?.charAt(0)
-              .toUpperCase() || '?',
-
-          monthMinutes,
-
-          todayMinutes,
-
-          estimatedSalary:
-            (monthMinutes / 60) *
-            employee.hourly_rate,
-
-          companyNames:
-            companyNames.length > 0
-              ? companyNames.join(', ')
-              : 'Aucune société',
-
-          entries:
-            employeeEntries,
-        }
-      })
-      .filter(
-        (employee) =>
-          employee.entries.length > 0
+      const monthMinutes = employeeEntries.reduce(
+        (total, entry) =>
+          total + Number(entry.worked_minutes ?? 0),
+        0
       )
-  })
+
+      const todayMinutes = employeeEntries
+        .filter(
+          (entry) =>
+            entry.work_date === today.value
+        )
+        .reduce(
+          (total, entry) =>
+            total + Number(entry.worked_minutes ?? 0),
+          0
+        )
+
+      const companyNames = Array.from(
+        new Set(
+          employeeEntries.map(
+            (entry) => entry.company_name
+          )
+        )
+      )
+
+      return {
+        id: employee.id,
+
+        fullName:
+          `${employee.first_name} ${employee.last_name}`,
+
+        initial:
+          employee.first_name
+            ?.charAt(0)
+            .toUpperCase() || '?',
+
+        monthMinutes,
+
+        todayMinutes,
+
+        estimatedSalary:
+          (monthMinutes / 60) *
+          employee.hourly_rate,
+
+        companyNames:
+          companyNames.length > 0
+            ? companyNames.join(', ')
+            : 'Aucune société',
+
+        entries: employeeEntries,
+      }
+    })
+    .filter(
+      (employee) =>
+        employee.entries.length > 0
+    )
+})
 
 const toggleEmployee = (
   employeeId: string
@@ -584,31 +623,39 @@ h1 {
   background: #ffffff;
 }
 
+.filters-card {
+  display: grid;
+  gap: 14px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+}
+
 .filters-card label {
   display: block;
-
   margin-bottom: 7px;
-
   color: #17372f;
-
   font-size: 12px;
   font-weight: 700;
 }
 
-.filters-card input {
+.filters-card input,
+.filters-card select {
   width: 100%;
   min-height: 48px;
-
   padding: 0 13px;
+  box-sizing: border-box;
 
   border: 1px solid #e5ddd8;
   border-radius: 14px;
 
   background: #faf7f4;
-
   color: #17372f;
 
   font: inherit;
+  font-size: 13px;
 }
 
 .state-card {

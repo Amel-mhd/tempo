@@ -195,7 +195,7 @@ const entries = ref<TimeEntry[]>([])
 
 /*
   Le taux horaire vient maintenant
-  du profil Supabase de l'employée.
+  du profil Supabase de l'employé.
 */
 const hourlyRate = ref(0)
 

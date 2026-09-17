@@ -114,7 +114,7 @@ const logout = async () => {
 
 .profile-page {
   min-height: 100vh;
-  padding: 28px 20px 110px;
+  padding: 28px 20px 120px;
   background: #f7f1ec;
   color: #17372f;
 }
@@ -238,56 +238,9 @@ const logout = async () => {
   background: #c66b50;
   color: #fff;
 }
-
-.admin-bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 90;
-  width: calc(100% - 28px);
-  max-width: 490px;
-  height: 68px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  padding: 7px;
-  border: 1px solid #e4d8d0;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow:
-    0 8px 30px rgba(23, 55, 47, 0.10),
-    0 2px 8px rgba(23, 55, 47, 0.05);
-}
-
-.admin-nav-item {
-  height: 54px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  border-radius: 16px;
-  color: #9a918c;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.admin-nav-icon {
-  font-size: 19px;
-  line-height: 1;
-}
-
-.admin-nav-item.active {
-  background: #17372f;
-  color: #fff;
-}
-
-@media (max-width: 420px) {
+@media (max-width: 600px) {
   .profile-page {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding: 24px 15px 115px;
   }
 
   .profile-header h1 {

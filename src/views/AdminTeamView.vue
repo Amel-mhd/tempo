@@ -174,7 +174,7 @@
       </div>
 
       <div class="field">
-        <label>Employée</label>
+        <label>Employé</label>
 
         <select
           v-model="hoursEmployeeId"
@@ -353,7 +353,7 @@
         <input
           v-model="searchQuery"
           type="search"
-          placeholder="Rechercher une employée..."
+          placeholder="Rechercher une employé..."
         />
       </div>
 
@@ -833,7 +833,7 @@ const addEmployee = async () => {
     console.error(error)
 
     addEmployeeError.value =
-      'Impossible d’ajouter cette employée.'
+      'Impossible d’ajouter cet employé.'
 
     addingEmployee.value = false
     return
@@ -984,7 +984,7 @@ const saveEmployee = async (
     console.error(employeeError)
 
     editError.value =
-      'Impossible de modifier cette employée.'
+      'Impossible de modifier cet employé.'
 
     saving.value = false
     return
@@ -1081,7 +1081,7 @@ const deleteEmployee = async (
     console.error(error)
 
     window.alert(
-      'Impossible de supprimer cette employée.'
+      'Impossible de supprimer cet employé.'
     )
 
     return
@@ -2036,81 +2036,6 @@ onMounted(async () => {
 }
 
 /* NAV BAS */
-
-.bottom-nav {
-  position: fixed;
-
-  left: 50%;
-  bottom: 16px;
-
-  z-index: 50;
-
-  width:
-    calc(100% - 30px);
-
-  max-width: 460px;
-
-  transform:
-    translateX(-50%);
-
-  display: grid;
-
-  grid-template-columns:
-    repeat(3, 1fr);
-
-  padding: 8px;
-
-  border:
-    1px solid #ebe4df;
-
-  border-radius: 22px;
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.96
-    );
-
-  box-shadow:
-    0 10px 35px
-    rgba(49, 38, 33, 0.08);
-
-  backdrop-filter:
-    blur(12px);
-}
-
-.nav-item {
-  min-height: 54px;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 3px;
-
-  border-radius: 15px;
-
-  color: #8b8581;
-
-  text-decoration: none;
-}
-
-.nav-item span {
-  font-size: 19px;
-}
-
-.nav-item small {
-  font-size: 10px;
-}
-
-.nav-item.active {
-  background: #f2e9e3;
-
-  color: #17372f;
-}
 
 /* TELEPHONE */
 

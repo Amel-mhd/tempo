@@ -59,7 +59,7 @@
             <strong>{{ company.name }}</strong>
             <span>
               {{ companyEmployeeCount(company.id) }}
-              employée{{ companyEmployeeCount(company.id) > 1 ? 's' : '' }}
+              employé{{ companyEmployeeCount(company.id) > 1 ? 's' : '' }}
             </span>
           </div>
 
@@ -439,7 +439,7 @@ const loadData = async () => {
 
   if (employeesResult.error) {
     console.error(
-      'Erreur employées :',
+      'Erreur employés :',
       employeesResult.error
     )
   }
@@ -1323,54 +1323,4 @@ onMounted(async () => {
     grid-column: 1 / -1;
   }
 }
-
-/* =========================
-   NAVBAR ADMIN
-========================= */
-
-.admin-bottom-nav {
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  z-index: 90;
-  width: calc(100% - 28px);
-  max-width: 490px;
-  height: 68px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  align-items: center;
-  padding: 7px;
-  border: 1px solid #e4d8d0;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow:
-    0 8px 30px rgba(23, 55, 47, 0.10),
-    0 2px 8px rgba(23, 55, 47, 0.05);
-}
-
-.admin-nav-item {
-  height: 54px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  border-radius: 16px;
-  color: #9a918c;
-  text-decoration: none;
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.admin-nav-icon {
-  font-size: 19px;
-  line-height: 1;
-}
-
-.admin-nav-item.active {
-  background: #17372f;
-  color: #fff;
-}
-
 </style>

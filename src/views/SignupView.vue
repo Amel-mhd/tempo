@@ -195,18 +195,21 @@ const signup = async () => {
     password: password.value,
 
     options: {
-      data: {
-        first_name:
-          firstName.value.trim(),
+  emailRedirectTo:
+    'https://tempo-am.netlify.app/home',
 
-        last_name:
-          lastName.value.trim(),
+  data: {
+    first_name:
+      firstName.value.trim(),
 
-        phone:
-          phone.value.trim(),
-      },
+    last_name:
+      lastName.value.trim(),
+
+    phone:
+      phone.value.trim(),
     },
-  })
+   }, 
+})
 
   if (error) {
     console.error(error)
