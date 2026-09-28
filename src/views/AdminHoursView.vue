@@ -684,9 +684,7 @@ const loadData =
       return
     }
 
-    posts.value =
-      (postData ?? [])
-        as Post[]
+    posts.value = (postData ?? []) as Post[]
 
     /* POINTAGES */
 

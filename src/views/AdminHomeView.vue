@@ -494,87 +494,6 @@ const adminInitial =
       'A'
     )
   })
-
-/* =========================
-   AUJOURD'HUI
-========================= */
-
-const today =
-  computed(() => {
-
-    const parts =
-      new Intl.DateTimeFormat(
-        'fr-FR',
-        {
-          timeZone:
-            'Europe/Paris',
-
-          year:
-            'numeric',
-
-          month:
-            '2-digit',
-
-          day:
-            '2-digit',
-        }
-      )
-        .formatToParts(
-          new Date()
-        )
-
-    const year =
-      parts.find(
-        (part) =>
-          part.type === 'year'
-      )?.value
-
-    const month =
-      parts.find(
-        (part) =>
-          part.type === 'month'
-      )?.value
-
-    const day =
-      parts.find(
-        (part) =>
-          part.type === 'day'
-      )?.value
-
-    return `${year}-${month}-${day}`
-  })
-
-const todayLabel =
-  computed(() => {
-
-    const formatted =
-      new Intl.DateTimeFormat(
-        'fr-FR',
-        {
-          timeZone:
-            'Europe/Paris',
-
-          weekday:
-            'long',
-
-          day:
-            'numeric',
-
-          month:
-            'long',
-        }
-      ).format(
-        new Date()
-      )
-
-    return (
-      formatted
-        .charAt(0)
-        .toUpperCase() +
-      formatted.slice(1)
-    )
-  })
-
 /* =========================
    VACATIONS VALIDES
 ========================= */
@@ -588,17 +507,6 @@ const validMonthPunches =
         'contested'
     )
   })
-
-const todayPunches =
-  computed(() => {
-
-    return validMonthPunches.value.filter(
-      (punch) =>
-        punch.work_date ===
-        today.value
-    )
-  })
-
 /* =========================
    MONTANTS
 ========================= */
@@ -619,24 +527,6 @@ const monthAmount =
       0
     )
   })
-
-const todayAmount =
-  computed(() => {
-
-    return todayPunches.value.reduce(
-      (total, punch) => {
-
-        return (
-          total +
-          Number(
-            punch.applied_rate
-          )
-        )
-      },
-      0
-    )
-  })
-
 /* =========================
    RÉPARTITION PAR POSTE
 ========================= */
