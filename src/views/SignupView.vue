@@ -1,20 +1,31 @@
 <template>
   <main class="signup-page">
     <section class="signup-card">
+
+      <!-- TITRE -->
       <div class="brand">
-        <p class="eyebrow">Tempo</p>
-        <h1>Créer mon compte</h1>
+        <p class="eyebrow">
+          Tempo
+        </p>
+
+        <h1>
+          Créer mon compte
+        </h1>
 
         <p class="subtitle">
           Renseignez vos informations pour accéder à votre espace.
         </p>
       </div>
 
+      <!-- FORMULAIRE -->
       <form
         class="signup-form"
         @submit.prevent="signup"
       >
+
+        <!-- PRÉNOM + NOM -->
         <div class="name-grid">
+
           <div class="field">
             <label for="firstName">
               Prénom
@@ -44,8 +55,10 @@
               required
             />
           </div>
+
         </div>
 
+        <!-- TÉLÉPHONE -->
         <div class="field">
           <label for="phone">
             Téléphone
@@ -60,6 +73,7 @@
           />
         </div>
 
+        <!-- EMAIL -->
         <div class="field">
           <label for="email">
             Adresse e-mail
@@ -75,6 +89,7 @@
           />
         </div>
 
+        <!-- MOT DE PASSE -->
         <div class="field">
           <label for="password">
             Mot de passe
@@ -91,6 +106,7 @@
           />
         </div>
 
+        <!-- CONFIRMATION -->
         <div class="field">
           <label for="confirmPassword">
             Confirmer le mot de passe
@@ -107,6 +123,7 @@
           />
         </div>
 
+        <!-- ERREUR -->
         <p
           v-if="errorMessage"
           class="message error"
@@ -114,13 +131,7 @@
           {{ errorMessage }}
         </p>
 
-        <p
-          v-if="successMessage"
-          class="message success"
-        >
-          {{ successMessage }}
-        </p>
-
+        <!-- BOUTON -->
         <button
           type="submit"
           class="signup-button"
@@ -128,19 +139,24 @@
         >
           {{
             loading
-              ? 'Création...'
+              ? 'Création du compte...'
               : 'Créer mon compte'
           }}
         </button>
+
       </form>
 
+      <!-- CONNEXION -->
       <div class="login-link">
-        <span>Déjà un compte ?</span>
+        <span>
+          Déjà un compte ?
+        </span>
 
         <RouterLink to="/">
           Se connecter
         </RouterLink>
       </div>
+
     </section>
   </main>
 </template>
@@ -152,21 +168,29 @@ import { supabase } from '../lib/supabase'
 
 const router = useRouter()
 
+/* =========================
+   FORMULAIRE
+========================= */
+
 const firstName = ref('')
 const lastName = ref('')
 const phone = ref('')
 const email = ref('')
+
 const password = ref('')
 const confirmPassword = ref('')
 
 const loading = ref(false)
-
 const errorMessage = ref('')
-const successMessage = ref('')
+
+/* =========================
+   INSCRIPTION
+========================= */
 
 const signup = async () => {
   errorMessage.value = ''
-  successMessage.value = ''
+
+  /* Vérification mot de passe */
 
   if (
     password.value !==
@@ -187,62 +211,105 @@ const signup = async () => {
 
   loading.value = true
 
-  const {
-    data,
-    error,
-  } = await supabase.auth.signUp({
-    email: email.value.trim(),
-    password: password.value,
+  try {
 
-    options: {
-  emailRedirectTo:
-    'https://tempo-am.netlify.app/home',
+    /* =========================
+       CRÉATION DU COMPTE
+    ========================= */
 
-  data: {
-    first_name:
-      firstName.value.trim(),
+    const {
+      data,
+      error,
+    } = await supabase.auth.signUp({
+      email:
+        email.value
+          .trim()
+          .toLowerCase(),
 
-    last_name:
-      lastName.value.trim(),
+      password:
+        password.value,
 
-    phone:
-      phone.value.trim(),
-    },
-   }, 
-})
+      options: {
+        data: {
+          first_name:
+            firstName.value.trim(),
 
-  if (error) {
-    console.error(error)
+          last_name:
+            lastName.value.trim(),
+
+          phone:
+            phone.value.trim(),
+        },
+      },
+    })
+
+    /* =========================
+       ERREUR SUPABASE
+    ========================= */
+
+    if (error) {
+      console.error(
+        'Erreur inscription :',
+        error
+      )
+
+      if (
+        error.message
+          .toLowerCase()
+          .includes('already')
+      ) {
+        errorMessage.value =
+          'Un compte existe déjà avec cette adresse e-mail.'
+      } else {
+        errorMessage.value =
+          error.message
+      }
+
+      return
+    }
+
+    /* =========================
+       VÉRIFICATION UTILISATEUR
+    ========================= */
+
+    if (!data.user) {
+      errorMessage.value =
+        'Impossible de créer le compte.'
+
+      return
+    }
+
+    /* =========================
+       CONNEXION AUTOMATIQUE
+    ========================= */
+
+    if (!data.session) {
+      errorMessage.value =
+        'Votre compte a été créé, mais la connexion automatique a échoué. Essayez de vous connecter.'
+
+      return
+    }
+
+    /* =========================
+       REDIRECTION
+    ========================= */
+
+    await router.push('/home')
+
+  } catch (error) {
+
+    console.error(
+      'Erreur inscription :',
+      error
+    )
 
     errorMessage.value =
-      error.message
+      'Une erreur est survenue. Veuillez réessayer.'
+
+  } finally {
 
     loading.value = false
-    return
   }
-
-  if (!data.user) {
-    errorMessage.value =
-      'Impossible de créer le compte.'
-
-    loading.value = false
-    return
-  }
-
-  loading.value = false
-
-  /*
-    Si Supabase demande une confirmation
-    d'adresse e-mail.
-  */
-  if (!data.session) {
-    successMessage.value =
-      'Compte créé. Vérifiez votre adresse e-mail pour confirmer votre inscription.'
-
-    return
-  }
-
-  await router.push('/home')
 }
 </script>
 
@@ -280,17 +347,25 @@ const signup = async () => {
   border: 1px solid #ece2dc;
   border-radius: 28px;
 
-  background: rgba(
-    255,
-    255,
-    255,
-    0.92
-  );
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.92
+    );
 
   box-shadow:
     0 18px 50px
-    rgba(51, 43, 38, 0.08);
+    rgba(
+      51,
+      43,
+      38,
+      0.08
+    );
 }
+
+/* TITRE */
 
 .brand {
   margin-bottom: 28px;
@@ -328,6 +403,8 @@ h1 {
   color: #817a75;
 }
 
+/* FORMULAIRE */
+
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -337,7 +414,9 @@ h1 {
 
 .name-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+
+  grid-template-columns:
+    1fr 1fr;
 
   gap: 12px;
 }
@@ -362,7 +441,10 @@ h1 {
 
   padding: 0 15px;
 
-  border: 1px solid #e3d9d3;
+  border:
+    1px solid
+    #e3d9d3;
+
   border-radius: 15px;
 
   outline: none;
@@ -387,12 +469,19 @@ h1 {
 .field input:focus {
   border-color: #9bafa7;
 
-  background: white;
+  background: #fff;
 
   box-shadow:
     0 0 0 3px
-    rgba(23, 55, 47, 0.07);
+    rgba(
+      23,
+      55,
+      47,
+      0.07
+    );
 }
+
+/* MESSAGE */
 
 .message {
   margin: 0;
@@ -407,15 +496,10 @@ h1 {
 
 .error {
   background: #f8e8e3;
-
   color: #a24d3d;
 }
 
-.success {
-  background: #e8f0eb;
-
-  color: #245243;
-}
+/* BOUTON */
 
 .signup-button {
   width: 100%;
@@ -427,24 +511,29 @@ h1 {
   border-radius: 16px;
 
   background: #17372f;
-  color: white;
+  color: #fff;
 
   font: inherit;
   font-size: 14px;
   font-weight: 700;
 
   cursor: pointer;
+
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
-.signup-button:hover {
+.signup-button:hover:not(:disabled) {
   background: #20483d;
 }
 
 .signup-button:disabled {
   opacity: 0.6;
-
   cursor: not-allowed;
 }
+
+/* CONNEXION */
 
 .login-link {
   display: flex;
@@ -466,6 +555,8 @@ h1 {
 
   text-decoration: none;
 }
+
+/* MOBILE */
 
 @media (max-width: 390px) {
   .signup-page {

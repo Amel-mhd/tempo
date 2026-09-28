@@ -1,108 +1,268 @@
 <template>
   <main class="admin-page">
-    <header class="topbar">
-      <div>
-        <p class="eyebrow">Administration</p>
-        <h1>Bonjour {{ firstName }} 👋</h1>
-        <p class="subtitle">
-          Retrouvez l’activité de vos sociétés en un coup d’œil.
-        </p>
-      </div>
+    <section class="page-shell">
 
-      <RouterLink to="/admin/profile" class="profile-button">
-        <span class="profile-icon">
-          {{ firstName.charAt(0).toUpperCase() || 'N' }}
-        </span>
-        <span>Profil</span>
-      </RouterLink>
-    </header>
-
-    <section class="month-section">
-      <p class="eyebrow">Période</p>
-      <div class="month-picker">
-        <button type="button" class="month-arrow" @click="previousMonth">‹</button>
+      <!-- HEADER -->
+      <header class="topbar">
         <div>
-          <span>Mois affiché</span>
-          <strong>{{ selectedMonthLabel }}</strong>
+          <p class="eyebrow">
+            Administration
+          </p>
+
+          <h1>
+            Bonjour {{ firstName }} 👋
+          </h1>
+
+          <p class="subtitle">
+            Retrouvez l'activité en un coup d'œil.
+          </p>
         </div>
-        <button type="button" class="month-arrow" @click="nextMonth">›</button>
-      </div>
-    </section>
 
-    <section class="global-section">
-      <div class="section-title">
-        <div>
-          <p class="eyebrow">Vue globale</p>
-          <h2>Toutes les sociétés</h2>
-        </div>
-        <span class="global-badge">{{ companies.length }} sociétés</span>
-      </div>
-
-      <div class="global-summary">
-        <article class="summary-card">
-          <span>Heures cumulées</span>
-          <strong>{{ allCompaniesHours }}</strong>
-        </article>
-        <article class="summary-card">
-          <span>Salaires estimés</span>
-          <strong>{{ allCompaniesSalary }} €</strong>
-        </article>
-      </div>
-
-      <div class="company-overview-list">
-        <article
-          v-for="company in companies"
-          :key="`overview-${company.id}`"
-          class="company-overview-card"
+        <RouterLink
+          to="/admin/profile"
+          class="profile-button"
         >
-          <div>
-            <strong>{{ company.name }}</strong>
-            <span>
-              {{ companyEmployeeCount(company.id) }}
-              employé{{ companyEmployeeCount(company.id) > 1 ? 's' : '' }}
-            </span>
+          <span class="profile-icon">
+            {{ adminInitial }}
+          </span>
+
+          <span>
+            Profil
+          </span>
+        </RouterLink>
+      </header>
+
+      <!-- CHARGEMENT -->
+      <section
+        v-if="loading"
+        class="state-card"
+      >
+        Chargement...
+      </section>
+
+      <!-- ERREUR -->
+      <section
+        v-else-if="errorMessage"
+        class="state-card error"
+      >
+        {{ errorMessage }}
+      </section>
+
+      <template v-else>
+
+        <!-- TOTAL DU MOIS -->
+<section class="today-card">
+
+  <div class="today-header">
+    <div>
+      <p class="eyebrow light">
+        Total du mois
+      </p>
+
+      <h2>
+        {{ selectedMonthLabel }}
+      </h2>
+    </div>
+
+    <span class="today-badge">
+      {{ validMonthPunches.length }}
+      vac.
+    </span>
+  </div>
+
+  <div class="today-summary">
+
+    <div>
+      <span>
+        Vacations
+      </span>
+
+      <strong>
+        {{ validMonthPunches.length }}
+      </strong>
+    </div>
+
+    <div>
+      <span>
+        Montant
+      </span>
+
+      <strong>
+        {{ formatMoney(monthAmount) }}
+      </strong>
+    </div>
+
+  </div>
+
+  <RouterLink
+    to="/admin/heures" 
+    class="pointages-button"
+  >
+    <span>
+      Voir les pointages
+    </span>
+
+    <span>
+      →
+    </span>
+  </RouterLink>
+
+</section>
+
+        <!-- CHOIX DU MOIS -->
+        <section class="month-section">
+
+          <p class="eyebrow">
+            Période
+          </p>
+
+          <div class="month-picker">
+
+            <button
+              type="button"
+              class="month-arrow"
+              @click="previousMonth"
+            >
+              ‹
+            </button>
+
+            <div>
+              <span>
+                Mois affiché
+              </span>
+
+              <strong>
+                {{ selectedMonthLabel }}
+              </strong>
+            </div>
+
+            <button
+              type="button"
+              class="month-arrow"
+              @click="nextMonth"
+            >
+              ›
+            </button>
+
           </div>
 
-          <div class="company-overview-values">
-            <strong>{{ companyHoursFor(company.id) }}</strong>
-            <span>{{ companySalaryFor(company.id) }} €</span>
+        </section>
+
+        <!-- RÉSUMÉ DU MOIS -->
+        <section class="month-section">
+
+          <div class="section-heading">
+            <p class="eyebrow">
+              Vue globale
+            </p>
+
+            <h2>
+              {{ selectedMonthLabel }}
+            </h2>
           </div>
-        </article>
-      </div>
-    </section>
 
-    <section class="companies-section">
-      <p class="eyebrow">Détail</p>
-      <h2>Choisir une société</h2>
+          <div class="month-summary">
 
-      <div class="company-list">
-        <button
-          v-for="company in companies"
-          :key="company.id"
-          type="button"
-          class="company-button"
-          :class="{ active: selectedCompanyId === company.id }"
-          @click="selectedCompanyId = company.id"
-        >
-          <span class="company-icon">{{ company.name.charAt(0) }}</span>
-          <span>{{ company.name }}</span>
-        </button>
-      </div>
-    </section>
+            <article class="summary-card">
+              <span>
+                Vacations
+              </span>
 
-    <section class="summary-grid">
-      <article class="summary-card">
-        <span>Employées</span>
-        <strong>{{ employees.length }}</strong>
-      </article>
-      <article class="summary-card">
-        <span>Heures ce mois</span>
-        <strong>{{ companyHours }}</strong>
-      </article>
-      <article class="summary-card salary-card">
-        <span>Salaires estimés</span>
-        <strong>{{ companySalary }} €</strong>
-      </article>
+              <strong>
+                {{ validMonthPunches.length }}
+              </strong>
+            </article>
+
+            <article class="summary-card">
+              <span>
+                Montant total
+              </span>
+
+              <strong class="money">
+                {{ formatMoney(monthAmount) }}
+              </strong>
+            </article>
+
+          </div>
+
+        </section>
+
+        <!-- RÉPARTITION PAR POSTE -->
+        <section class="posts-section">
+
+          <div class="section-heading">
+            <p class="eyebrow">
+              Répartition
+            </p>
+
+            <h2>
+              Par poste
+            </h2>
+          </div>
+
+          <div class="post-list">
+
+            <article
+              v-for="post in postSummaries"
+              :key="post.id"
+              class="post-card"
+            >
+
+              <div class="post-left">
+
+                <div
+                  class="post-icon"
+                  :class="post.service_type"
+                >
+                  {{
+                    post.service_type === 'security'
+                      ? '🛡️'
+                      : '✨'
+                  }}
+                </div>
+
+                <div class="post-info">
+
+                  <strong>
+                    {{ serviceLabel(post.service_type) }}
+                  </strong>
+
+                  <span>
+                    {{ post.site_name }}
+                  </span>
+
+                </div>
+
+              </div>
+
+              <div class="post-right">
+
+                <strong>
+                  {{ post.vacationCount }}
+                  vac.
+                </strong>
+
+                <span>
+                  {{ formatMoney(post.amount) }}
+                </span>
+
+              </div>
+
+            </article>
+
+          </div>
+
+          <div
+            v-if="postSummaries.length === 0"
+            class="empty-card"
+          >
+            Aucun poste disponible.
+          </div>
+
+        </section>
+
+      </template>
+
     </section>
 
     <AdminBottomNav />
@@ -122,365 +282,580 @@ import {
   useRouter,
 } from 'vue-router'
 
-import AdminBottomNav from '../components/AdminBottomNav.vue'
-import { supabase } from '../lib/supabase'
+import {
+  supabase,
+} from '../lib/supabase'
 
-interface Company {
+import AdminBottomNav
+  from '../components/AdminBottomNav.vue'
+
+/* =========================
+   TYPES
+========================= */
+
+type ServiceType =
+  | 'security'
+  | 'cleaning'
+
+type PunchStatus =
+  | 'validated'
+  | 'contested'
+
+interface Post {
   id: string
-  name: string
+  service_type: ServiceType
+  site_name: string
 }
 
-interface Employee {
+interface Punch {
   id: string
-  hourly_rate: number
-}
-
-interface EmployeeCompany {
   employee_id: string
-  company_id: string
-}
-
-interface EmployeeTimeEntry {
-  id: string
-  employee_id: string
-  company_id: string
+  post_id: string
   work_date: string
-  worked_minutes: number
+  applied_rate: number
+  status: PunchStatus
 }
 
-const router = useRouter()
+/* =========================
+   BASE
+========================= */
 
-const firstName = ref('')
-const companies = ref<Company[]>([])
-const allEmployees = ref<Employee[]>([])
-const employeeCompanyLinks =
-  ref<EmployeeCompany[]>([])
-const monthEntries =
-  ref<EmployeeTimeEntry[]>([])
+const router =
+  useRouter()
 
-const selectedCompanyId = ref('')
+const loading =
+  ref(true)
 
-const now = new Date()
+const errorMessage =
+  ref('')
 
-const selectedMonth = ref(
-  `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, '0')}`
-)
+const firstName =
+  ref('')
 
-const selectedMonthLabel = computed(() => {
-  const [year, month] =
-    selectedMonth.value
-      .split('-')
-      .map(Number)
+const posts =
+  ref<Post[]>([])
 
-  return new Intl.DateTimeFormat(
-    'fr-FR',
-    {
-      month: 'long',
-      year: 'numeric',
-    }
-  ).format(
-    new Date(year, month - 1, 1)
+const monthPunches =
+  ref<Punch[]>([])
+
+/* =========================
+   MOIS
+========================= */
+
+const now =
+  new Date()
+
+const selectedMonth =
+  ref(
+    `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, '0')}`
   )
-})
 
-const monthBounds = computed(() => {
-  const [year, month] =
-    selectedMonth.value
-      .split('-')
-      .map(Number)
+const selectedMonthLabel =
+  computed(() => {
 
-  const lastDay =
-    new Date(year, month, 0)
-      .getDate()
+    const [
+      year,
+      month,
+    ] =
+      selectedMonth.value
+        .split('-')
+        .map(Number)
 
-  return {
-    start:
-      `${year}-${String(month)
-        .padStart(2, '0')}-01`,
+    const label =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          month: 'long',
+          year: 'numeric',
+        }
+      ).format(
+        new Date(
+          year,
+          month - 1,
+          1
+        )
+      )
 
-    end:
-      `${year}-${String(month)
-        .padStart(2, '0')}-${String(
+    return (
+      label.charAt(0).toUpperCase() +
+      label.slice(1)
+    )
+  })
+
+const monthBounds =
+  computed(() => {
+
+    const [
+      year,
+      month,
+    ] =
+      selectedMonth.value
+        .split('-')
+        .map(Number)
+
+    const lastDay =
+      new Date(
+        year,
+        month,
+        0
+      ).getDate()
+
+    return {
+      start:
+        `${year}-${String(
+          month
+        ).padStart(
+          2,
+          '0'
+        )}-01`,
+
+      end:
+        `${year}-${String(
+          month
+        ).padStart(
+          2,
+          '0'
+        )}-${String(
           lastDay
-        ).padStart(2, '0')}`,
-  }
-})
+        ).padStart(
+          2,
+          '0'
+        )}`,
+    }
+  })
 
-const previousMonth = () => {
-  const [year, month] =
-    selectedMonth.value
-      .split('-')
-      .map(Number)
+const previousMonth =
+  () => {
 
-  const date =
-    new Date(year, month - 2, 1)
+    const [
+      year,
+      month,
+    ] =
+      selectedMonth.value
+        .split('-')
+        .map(Number)
 
-  selectedMonth.value =
-    `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
-}
+    const date =
+      new Date(
+        year,
+        month - 2,
+        1
+      )
 
-const nextMonth = () => {
-  const [year, month] =
-    selectedMonth.value
-      .split('-')
-      .map(Number)
-
-  const date =
-    new Date(year, month, 1)
-
-  selectedMonth.value =
-    `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
-}
-
-const formatMoney = (value: number) =>
-  Number(value ?? 0)
-    .toFixed(2)
-    .replace('.', ',')
-
-const formatWorkedTime = (
-  minutes: number
-) => {
-  const safeMinutes =
-    Number(minutes ?? 0)
-
-  const hours =
-    Math.floor(safeMinutes / 60)
-
-  const remainingMinutes =
-    safeMinutes % 60
-
-  if (remainingMinutes === 0) {
-    return `${hours} h`
+    selectedMonth.value =
+      `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(
+        2,
+        '0'
+      )}`
   }
 
-  return `${hours} h ${String(
-    remainingMinutes
-  ).padStart(2, '0')}`
-}
+const nextMonth =
+  () => {
 
-const employeeRate = (
-  employeeId: string
-) =>
-  allEmployees.value.find(
-    (employee) =>
-      employee.id === employeeId
-  )?.hourly_rate ?? 0
+    const [
+      year,
+      month,
+    ] =
+      selectedMonth.value
+        .split('-')
+        .map(Number)
 
-const minutesForEntries = (
-  entries: EmployeeTimeEntry[]
-) =>
-  entries.reduce(
-    (total, entry) =>
-      total +
+    const date =
+      new Date(
+        year,
+        month,
+        1
+      )
+
+    selectedMonth.value =
+      `${date.getFullYear()}-${String(
+        date.getMonth() + 1
+      ).padStart(
+        2,
+        '0'
+      )}`
+  }
+
+/* =========================
+   ADMIN
+========================= */
+
+const adminInitial =
+  computed(() => {
+
+    return (
+      firstName.value
+        ?.charAt(0)
+        .toUpperCase() ||
+      'A'
+    )
+  })
+
+/* =========================
+   AUJOURD'HUI
+========================= */
+
+const today =
+  computed(() => {
+
+    const parts =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          timeZone:
+            'Europe/Paris',
+
+          year:
+            'numeric',
+
+          month:
+            '2-digit',
+
+          day:
+            '2-digit',
+        }
+      )
+        .formatToParts(
+          new Date()
+        )
+
+    const year =
+      parts.find(
+        (part) =>
+          part.type === 'year'
+      )?.value
+
+    const month =
+      parts.find(
+        (part) =>
+          part.type === 'month'
+      )?.value
+
+    const day =
+      parts.find(
+        (part) =>
+          part.type === 'day'
+      )?.value
+
+    return `${year}-${month}-${day}`
+  })
+
+const todayLabel =
+  computed(() => {
+
+    const formatted =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          timeZone:
+            'Europe/Paris',
+
+          weekday:
+            'long',
+
+          day:
+            'numeric',
+
+          month:
+            'long',
+        }
+      ).format(
+        new Date()
+      )
+
+    return (
+      formatted
+        .charAt(0)
+        .toUpperCase() +
+      formatted.slice(1)
+    )
+  })
+
+/* =========================
+   VACATIONS VALIDES
+========================= */
+
+const validMonthPunches =
+  computed(() => {
+
+    return monthPunches.value.filter(
+      (punch) =>
+        punch.status !==
+        'contested'
+    )
+  })
+
+const todayPunches =
+  computed(() => {
+
+    return validMonthPunches.value.filter(
+      (punch) =>
+        punch.work_date ===
+        today.value
+    )
+  })
+
+/* =========================
+   MONTANTS
+========================= */
+
+const monthAmount =
+  computed(() => {
+
+    return validMonthPunches.value.reduce(
+      (total, punch) => {
+
+        return (
+          total +
+          Number(
+            punch.applied_rate
+          )
+        )
+      },
+      0
+    )
+  })
+
+const todayAmount =
+  computed(() => {
+
+    return todayPunches.value.reduce(
+      (total, punch) => {
+
+        return (
+          total +
+          Number(
+            punch.applied_rate
+          )
+        )
+      },
+      0
+    )
+  })
+
+/* =========================
+   RÉPARTITION PAR POSTE
+========================= */
+
+const postSummaries =
+  computed(() => {
+
+    return posts.value.map(
+      (post) => {
+
+        const postPunches =
+          validMonthPunches.value.filter(
+            (punch) =>
+              punch.post_id ===
+              post.id
+          )
+
+        const amount =
+          postPunches.reduce(
+            (total, punch) => {
+
+              return (
+                total +
+                Number(
+                  punch.applied_rate
+                )
+              )
+            },
+            0
+          )
+
+        return {
+          ...post,
+
+          vacationCount:
+            postPunches.length,
+
+          amount,
+        }
+      }
+    )
+  })
+
+/* =========================
+   FORMATAGE
+========================= */
+
+const serviceLabel =
+  (
+    service:
+      ServiceType
+  ) => {
+
+    return service ===
+      'security'
+        ? 'Sécurité'
+        : 'Ménage'
+  }
+
+const formatMoney =
+  (
+    value:
+      number
+  ) => {
+
+    return new Intl.NumberFormat(
+      'fr-FR',
+      {
+        style:
+          'currency',
+
+        currency:
+          'EUR',
+      }
+    ).format(
       Number(
-        entry.worked_minutes ?? 0
-      ),
-    0
-  )
-
-const salaryForEntries = (
-  entries: EmployeeTimeEntry[]
-) =>
-  entries.reduce(
-    (total, entry) =>
-      total +
-      (
-        Number(
-          entry.worked_minutes ?? 0
-        ) / 60
-      ) *
-        employeeRate(
-          entry.employee_id
-        ),
-    0
-  )
-
-const employees = computed(() => {
-  if (!selectedCompanyId.value) {
-    return []
-  }
-
-  const employeeIds =
-    employeeCompanyLinks.value
-      .filter(
-        (link) =>
-          link.company_id ===
-          selectedCompanyId.value
+        value ?? 0
       )
-      .map(
-        (link) =>
-          link.employee_id
-      )
-
-  return allEmployees.value.filter(
-    (employee) =>
-      employeeIds.includes(
-        employee.id
-      )
-  )
-})
-
-const companyEntries = computed(() =>
-  monthEntries.value.filter(
-    (entry) =>
-      entry.company_id ===
-      selectedCompanyId.value
-  )
-)
-
-const companyHours = computed(() =>
-  formatWorkedTime(
-    minutesForEntries(
-      companyEntries.value
-    )
-  )
-)
-
-const companySalary = computed(() =>
-  formatMoney(
-    salaryForEntries(
-      companyEntries.value
-    )
-  )
-)
-
-const allCompaniesHours = computed(() =>
-  formatWorkedTime(
-    minutesForEntries(
-      monthEntries.value
-    )
-  )
-)
-
-const allCompaniesSalary =
-  computed(() =>
-    formatMoney(
-      salaryForEntries(
-        monthEntries.value
-      )
-    )
-  )
-
-const companyEmployeeCount = (
-  companyId: string
-) =>
-  new Set(
-    employeeCompanyLinks.value
-      .filter(
-        (link) =>
-          link.company_id ===
-          companyId
-      )
-      .map(
-        (link) =>
-          link.employee_id
-      )
-  ).size
-
-const companyHoursFor = (
-  companyId: string
-) =>
-  formatWorkedTime(
-    minutesForEntries(
-      monthEntries.value.filter(
-        (entry) =>
-          entry.company_id ===
-          companyId
-      )
-    )
-  )
-
-const companySalaryFor = (
-  companyId: string
-) =>
-  formatMoney(
-    salaryForEntries(
-      monthEntries.value.filter(
-        (entry) =>
-          entry.company_id ===
-          companyId
-      )
-    )
-  )
-
-const loadData = async () => {
-  const { start, end } =
-    monthBounds.value
-
-  const [
-    employeesResult,
-    linksResult,
-    entriesResult,
-  ] = await Promise.all([
-    supabase
-      .from('employees')
-      .select('id, hourly_rate'),
-
-    supabase
-      .from('employee_companies')
-      .select(
-        'employee_id, company_id'
-      ),
-
-    supabase
-      .from('all_employee_time_entries')
-      .select(
-        'id, employee_id, company_id, work_date, worked_minutes'
-      )
-      .gte('work_date', start)
-      .lte('work_date', end),
-  ])
-
-  if (employeesResult.error) {
-    console.error(
-      'Erreur employés :',
-      employeesResult.error
     )
   }
 
-  if (linksResult.error) {
-    console.error(
-      'Erreur rattachements :',
-      linksResult.error
-    )
-  }
+/* =========================
+   CHARGEMENT DES DONNÉES
+========================= */
 
-  if (entriesResult.error) {
-    console.error(
-      'Erreur heures :',
-      entriesResult.error
-    )
-  }
+const loadData =
+  async () => {
 
-  allEmployees.value =
-    (employeesResult.data ?? [])
-      .map((employee) => ({
-        id: employee.id,
-        hourly_rate:
-          Number(
-            employee.hourly_rate ?? 0
+    loading.value =
+      true
+
+    errorMessage.value =
+      ''
+
+    const {
+      start,
+      end,
+    } =
+      monthBounds.value
+
+    const [
+      postsResult,
+      punchesResult,
+    ] =
+      await Promise.all([
+
+        supabase
+          .from('posts')
+          .select(`
+            id,
+            service_type,
+            site_name
+          `)
+          .eq(
+            'active',
+            true
+          )
+          .order(
+            'site_name'
           ),
-      }))
 
-  employeeCompanyLinks.value =
-    linksResult.data ?? []
-
-  monthEntries.value =
-    (entriesResult.data ?? [])
-      .map((entry) => ({
-        ...entry,
-        worked_minutes:
-          Number(
-            entry.worked_minutes ?? 0
+        supabase
+          .from('punches')
+          .select(`
+            id,
+            employee_id,
+            post_id,
+            work_date,
+            applied_rate,
+            status
+          `)
+          .gte(
+            'work_date',
+            start
+          )
+          .lte(
+            'work_date',
+            end
           ),
-      }))
-}
+
+      ])
+
+    /* POSTES */
+
+    if (
+      postsResult.error
+    ) {
+
+      console.error(
+        'Erreur postes :',
+        postsResult.error
+      )
+
+      errorMessage.value =
+        'Impossible de charger les postes.'
+
+      loading.value =
+        false
+
+      return
+    }
+
+    /* POINTAGES */
+
+    if (
+      punchesResult.error
+    ) {
+
+      console.error(
+        'Erreur pointages :',
+        punchesResult.error
+      )
+
+      errorMessage.value =
+        'Impossible de charger les pointages.'
+
+      loading.value =
+        false
+
+      return
+    }
+
+    posts.value =
+      (postsResult.data ??
+        []) as Post[]
+
+    /*
+      Si une ancienne vacation possède
+      encore un ancien statut,
+      seule "contested" est exclue.
+    */
+
+    monthPunches.value =
+      (punchesResult.data ??
+        []).map(
+          (punch: any) => ({
+            ...punch,
+
+            applied_rate:
+              Number(
+                punch.applied_rate ??
+                0
+              ),
+
+            status:
+              punch.status ===
+              'contested'
+                ? 'contested'
+                : 'validated',
+          })
+        ) as Punch[]
+
+    loading.value =
+      false
+  }
+
+/* =========================
+   CHANGEMENT DE MOIS
+========================= */
 
 watch(
   selectedMonth,
@@ -489,838 +864,829 @@ watch(
   }
 )
 
-onMounted(async () => {
-  const {
-    data: { user },
-  } =
-    await supabase.auth.getUser()
+/* =========================
+   DÉMARRAGE
+========================= */
 
-  if (!user) {
-    await router.push('/')
-    return
+onMounted(
+  async () => {
+
+    const {
+      data: {
+        user,
+      },
+    } =
+      await supabase.auth
+        .getUser()
+
+    if (!user) {
+
+      await router.push(
+        '/'
+      )
+
+      return
+    }
+
+    const {
+      data:
+        adminProfile,
+
+      error:
+        adminError,
+    } =
+      await supabase
+        .from('profiles')
+        .select(`
+          first_name,
+          role
+        `)
+        .eq(
+          'id',
+          user.id
+        )
+        .single()
+
+    if (
+      adminError ||
+      !adminProfile ||
+      adminProfile.role !==
+        'admin'
+    ) {
+
+      await router.push(
+        '/home'
+      )
+
+      return
+    }
+
+    firstName.value =
+      adminProfile.first_name ??
+      ''
+
+    await loadData()
   }
-
-  const {
-    data: adminProfile,
-    error: adminError,
-  } = await supabase
-    .from('profiles')
-    .select('first_name, role')
-    .eq('id', user.id)
-    .single()
-
-  if (
-    adminError ||
-    !adminProfile ||
-    adminProfile.role !== 'admin'
-  ) {
-    await router.push('/home')
-    return
-  }
-
-  firstName.value =
-    adminProfile.first_name ?? ''
-
-  const {
-    data: companiesData,
-    error: companiesError,
-  } = await supabase
-    .from('companies')
-    .select('id, name')
-    .order('name')
-
-  if (companiesError) {
-    console.error(
-      companiesError
-    )
-    return
-  }
-
-  companies.value =
-    companiesData ?? []
-
-  if (
-    companies.value.length > 0
-  ) {
-    selectedCompanyId.value =
-      companies.value[0].id
-  }
-
-  await loadData()
-})
+)
 </script>
 
 <style scoped>
 * {
-  box-sizing: border-box;
+  box-sizing:
+    border-box;
 }
+
+/* PAGE */
 
 .admin-page {
-  min-height: 100vh;
-  padding: 28px 20px 110px;
-  background: #f7f1ec;
-  color: #17372f;
+  min-height:
+    100vh;
+
+  padding:
+    28px
+    18px
+    120px;
+
+  background:
+    #f7f1ec;
+
+  color:
+    #17372f;
 }
 
-.topbar,
-.month-section,
-.global-section,
-.companies-section,
-.summary-grid,
-.employees-section {
-  width: 100%;
-  max-width: 520px;
-  margin-left: auto;
-  margin-right: auto;
+.page-shell {
+  width:
+    100%;
+
+  max-width:
+    540px;
+
+  margin:
+    0 auto;
 }
+
+/* HEADER */
 
 .topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 15px;
-  margin-bottom: 22px;
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  gap:
+    15px;
+
+  margin-bottom:
+    22px;
 }
 
 .eyebrow {
-  margin: 0 0 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  color: #9b8174;
+  margin:
+    0
+    0
+    5px;
+
+  color:
+    #9b8174;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    1.2px;
+
+  text-transform:
+    uppercase;
 }
 
-.topbar h1,
-.month-section h2,
-.global-section h2,
-.companies-section h2,
-.section-header h2,
-.modal-header h2 {
-  margin: 0;
-  color: #17372f;
+.eyebrow.light {
+  color:
+    #d9c6bc;
 }
 
-.topbar h1 {
-  font-size: 28px;
+h1,
+h2,
+p {
+  margin-top:
+    0;
+}
+
+h1 {
+  margin-bottom:
+    0;
+
+  color:
+    #17372f;
+
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size:
+    28px;
+
+  font-weight:
+    400;
 }
 
 .subtitle {
-  margin: 5px 0 0;
-  font-size: 13px;
-  color: #7d7874;
+  max-width:
+    300px;
+
+  margin:
+    6px
+    0
+    0;
+
+  color:
+    #7d7874;
+
+  font-size:
+    12px;
+
+  line-height:
+    1.4;
 }
 
+/* PROFIL */
+
 .profile-button {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px 6px 6px;
-  border-radius: 999px;
-  background: #17372f;
-  color: #fff;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
+  flex-shrink:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    7px;
+
+  padding:
+    6px
+    10px
+    6px
+    6px;
+
+  border-radius:
+    999px;
+
+  background:
+    #17372f;
+
+  color:
+    white;
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+
+  text-decoration:
+    none;
 }
 
 .profile-icon {
-  width: 31px;
-  height: 31px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
-  font-size: 13px;
-  font-weight: 800;
+  width:
+    30px;
+
+  height:
+    30px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    50%;
+
+  background:
+    #f1e3dc;
+
+  color:
+    #17372f;
+
+  font-weight:
+    800;
 }
 
+/* ÉTATS */
+
+.state-card {
+  padding:
+    20px;
+
+  border:
+    1px solid
+    #ebe4df;
+
+  border-radius:
+    20px;
+
+  background:
+    white;
+
+  color:
+    #7d7874;
+
+  font-size:
+    12px;
+}
+
+.state-card.error {
+  background:
+    #f9e7e3;
+
+  color:
+    #a84f40;
+}
+
+/* AUJOURD'HUI */
+
+.today-card {
+  margin-bottom:
+    22px;
+
+  padding:
+    19px;
+
+  border-radius:
+    24px;
+
+  background:
+    #17372f;
+
+  color:
+    white;
+}
+
+.today-header {
+  display:
+    flex;
+
+  justify-content:
+    space-between;
+
+  align-items:
+    flex-start;
+
+  gap:
+    15px;
+
+  margin-bottom:
+    15px;
+}
+
+.today-card h2 {
+  margin:
+    0;
+
+  color:
+    white;
+
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size:
+    20px;
+
+  font-weight:
+    400;
+}
+
+.today-badge {
+  padding:
+    6px
+    9px;
+
+  border-radius:
+    999px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.12
+    );
+
+  font-size:
+    10px;
+}
+
+.today-summary {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap:
+    9px;
+}
+
+.today-summary div {
+  padding:
+    14px;
+
+  border-radius:
+    15px;
+
+  background:
+    white;
+
+  color:
+    #17372f;
+}
+
+.today-summary span {
+  display:
+    block;
+
+  margin-bottom:
+    5px;
+
+  color:
+    #8c7b72;
+
+  font-size:
+    9px;
+}
+
+.today-summary strong {
+  font-size:
+    18px;
+}
+
+.pointages-button {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  margin-top:
+    12px;
+
+  padding:
+    12px
+    14px;
+
+  border-radius:
+    14px;
+
+  background:
+    #c66b50;
+
+  color:
+    white;
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+
+  text-decoration:
+    none;
+}
+
+/* PÉRIODE */
+
 .month-section {
-  margin-bottom: 20px;
+  margin-bottom:
+    23px;
 }
 
 .month-picker {
-  display: grid;
-  grid-template-columns: 44px 1fr 44px;
-  align-items: center;
-  gap: 10px;
-  padding: 11px;
-  border: 1px solid #e8ddd6;
-  border-radius: 20px;
-  background: #fff;
+  display:
+    grid;
+
+  grid-template-columns:
+    44px
+    1fr
+    44px;
+
+  align-items:
+    center;
+
+  gap:
+    10px;
+
+  padding:
+    10px;
+
+  border:
+    1px solid
+    #e8ddd6;
+
+  border-radius:
+    20px;
+
+  background:
+    white;
 }
 
 .month-picker > div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    center;
+
+  gap:
+    2px;
 }
 
 .month-picker span {
-  font-size: 10px;
-  color: #8c8580;
+  color:
+    #8c8580;
+
+  font-size:
+    9px;
 }
 
 .month-picker strong {
-  text-transform: capitalize;
-  font-size: 15px;
+  color:
+    #17372f;
+
+  font-size:
+    14px;
+
+  text-transform:
+    capitalize;
 }
 
 .month-arrow {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 14px;
-  background: #f1e3dc;
-  color: #17372f;
-  font-size: 27px;
-  cursor: pointer;
+  width:
+    44px;
+
+  height:
+    44px;
+
+  border:
+    0;
+
+  border-radius:
+    14px;
+
+  background:
+    #f1e3dc;
+
+  color:
+    #17372f;
+
+  font-size:
+    26px;
+
+  cursor:
+    pointer;
 }
 
-.global-section {
-  padding: 18px;
-  margin-bottom: 22px;
-  border-radius: 24px;
-  background: #17372f;
-  color: #fff;
+/* TITRES */
+
+.section-heading {
+  margin-bottom:
+    12px;
 }
 
-.section-title {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+.section-heading h2 {
+  margin:
+    0;
+
+  color:
+    #17372f;
+
+  font-size:
+    20px;
 }
 
-.global-section .eyebrow {
-  color: #d7bfb3;
-}
+/* RÉSUMÉ MOIS */
 
-.global-section h2 {
-  color: #fff;
-  font-size: 21px;
-}
+.month-summary {
+  display:
+    grid;
 
-.global-badge {
-  padding: 6px 9px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
-  font-size: 10px;
-}
+  grid-template-columns:
+    repeat(2, 1fr);
 
-.global-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin-bottom: 12px;
-}
-
-.global-summary .summary-card {
-  border: 1px solid #e1cec2;
-  background: #fff;
-}
-
-.global-summary .summary-card span {
-  color: #806e65;
-}
-
-.global-summary .summary-card strong {
-  color: #17372f;
-}
-
-.company-overview-list {
-  display: grid;
-  gap: 8px;
-}
-
-.company-overview-card {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 12px;
-  border: 1px solid #e1cec2;
-  border-radius: 14px;
-  background: #fff;
-  color: #17372f;
-}
-
-.company-overview-card > div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.company-overview-card span {
-  font-size: 10px;
-  color: #806e65;
-}
-
-.company-overview-values {
-  text-align: right;
-}
-
-.companies-section {
-  margin-bottom: 24px;
-}
-
-.companies-section h2 {
-  margin-bottom: 14px;
-  font-size: 20px;
-}
-
-.company-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 9px;
-}
-
-.company-button {
-  min-width: 0;
-  padding: 15px 5px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid #e7ddd6;
-  border-radius: 18px;
-  background: #fff;
-  color: #17372f;
-  font-family: inherit;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.company-button.active {
-  border-color: #17372f;
-  background: #17372f;
-  color: #fff;
-}
-
-.company-icon {
-  width: 34px;
-  height: 34px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
-  font-weight: 700;
-}
-
-.company-button.active .company-icon {
-  background: #f7f1ec;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 25px;
+  gap:
+    10px;
 }
 
 .summary-card {
-  padding: 18px;
-  border: 1px solid #ede5df;
-  border-radius: 20px;
-  background: #fff;
-}
+  padding:
+    18px;
 
-.salary-card {
-  grid-column: 1 / -1;
+  border:
+    1px solid
+    #ebe4df;
+
+  border-radius:
+    20px;
+
+  background:
+    white;
 }
 
 .summary-card span {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 11px;
-  color: #8c8580;
+  display:
+    block;
+
+  margin-bottom:
+    6px;
+
+  color:
+    #8c8580;
+
+  font-size:
+    9px;
 }
 
 .summary-card strong {
-  font-size: 22px;
+  color:
+    #17372f;
+
+  font-size:
+    21px;
 }
 
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 15px;
-  margin-bottom: 14px;
+.summary-card .money {
+  color:
+    #c66b50;
 }
 
-.section-header h2 {
-  font-size: 21px;
+/* POSTES */
+
+.posts-section {
+  margin-bottom:
+    25px;
 }
 
-.add-button {
-  padding: 11px 15px;
-  border: 0;
-  border-radius: 14px;
-  background: #c66b50;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
+.post-list {
+  display:
+    grid;
+
+  gap:
+    9px;
 }
 
-.add-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.post-card {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
+
+  padding:
+    14px;
+
+  border:
+    1px solid
+    #ebe4df;
+
+  border-radius:
+    18px;
+
+  background:
+    white;
 }
+
+.post-left {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
+}
+
+.post-icon {
+  width:
+    40px;
+
+  height:
+    40px;
+
+  flex-shrink:
+    0;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    12px;
+
+  background:
+    #f1e3dc;
+
+  font-size:
+    16px;
+}
+
+.post-icon.cleaning {
+  background:
+    #e8efe9;
+}
+
+.post-info {
+  min-width:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    3px;
+}
+
+.post-info strong {
+  color:
+    #17372f;
+
+  font-size:
+    12px;
+}
+
+.post-info span {
+  color:
+    #8c8580;
+
+  font-size:
+    9px;
+}
+
+.post-right {
+  flex-shrink:
+    0;
+
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  align-items:
+    flex-end;
+
+  gap:
+    3px;
+}
+
+.post-right strong {
+  color:
+    #17372f;
+
+  font-size:
+    11px;
+}
+
+.post-right span {
+  color:
+    #c66b50;
+
+  font-size:
+    11px;
+
+  font-weight:
+    700;
+}
+
+/* VIDE */
 
 .empty-card {
-  padding: 30px 20px;
-  border: 1px solid #ede5df;
-  border-radius: 20px;
-  background: #fff;
-  text-align: center;
-  color: #8b8581;
+  padding:
+    18px;
+
+  border:
+    1px solid
+    #ebe4df;
+
+  border-radius:
+    18px;
+
+  background:
+    white;
+
+  color:
+    #8c8580;
+
+  font-size:
+    11px;
+
+  text-align:
+    center;
 }
 
-.empty-card strong {
-  display: block;
-  margin-bottom: 5px;
-  color: #17372f;
-}
+/* MOBILE */
 
-.empty-card p {
-  margin: 0;
-  font-size: 12px;
-}
+@media (
+  max-width: 400px
+) {
 
-.empty-avatar {
-  width: 44px;
-  height: 44px;
-  margin: 0 auto 12px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  color: #17372f;
-  font-size: 20px;
-}
-
-.employee-card {
-  padding: 16px;
-  margin-bottom: 12px;
-  border: 1px solid #ede5df;
-  border-radius: 21px;
-  background: #fff;
-}
-
-.employee-main {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.employee-avatar {
-  width: 46px;
-  height: 46px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #f1e3dc;
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.employee-info {
-  min-width: 0;
-}
-
-.employee-info h3 {
-  margin: 0;
-  font-size: 15px;
-}
-
-.employee-info p {
-  margin: 3px 0;
-  font-size: 12px;
-  color: #8e8782;
-}
-
-.employee-info > span {
-  font-size: 11px;
-  color: #755f54;
-}
-
-.employee-companies {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 7px;
-}
-
-.mini-company-badge {
-  padding: 4px 7px;
-  border-radius: 999px;
-  background: #edf2ef;
-  color: #17372f !important;
-  font-size: 9px !important;
-  font-weight: 700;
-}
-
-.employee-month-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 13px;
-}
-
-.employee-month-summary > div {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 11px 12px;
-  border-radius: 13px;
-  background: #f7f1ec;
-}
-
-.employee-month-summary small {
-  font-size: 9px;
-  color: #8c8580;
-}
-
-.employee-month-summary span,
-.employee-month-summary strong {
-  font-size: 13px;
-}
-
-.employee-total {
-  text-align: right;
-}
-
-.employee-salary-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  margin-top: 8px;
-  padding: 9px 11px;
-  border-radius: 12px;
-  background: #f1e3dc;
-  font-size: 11px;
-}
-
-.employee-actions {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 7px;
-  margin-top: 14px;
-}
-
-.hours-button,
-.small-button {
-  padding: 9px 10px;
-  border-radius: 11px;
-  font-family: inherit;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.hours-button {
-  border: 0;
-  background: #17372f;
-  color: #fff;
-}
-
-.small-button {
-  border: 1px solid #ded4cd;
-  background: #fff;
-  color: #17372f;
-}
-
-.small-button.delete {
-  color: #b34f3d;
-}
-
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  padding: 20px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(23, 55, 47, 0.35);
-}
-
-.higher-modal {
-  z-index: 200;
-}
-
-.modal-card {
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 22px;
-  border-radius: 26px 26px 18px 18px;
-  background: #fdfaf7;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  margin-bottom: 16px;
-}
-
-.modal-header h2 {
-  font-size: 22px;
-}
-
-.close-button {
-  width: 35px;
-  height: 35px;
-  border: 0;
-  border-radius: 50%;
-  background: #efe5df;
-  color: #17372f;
-  font-size: 23px;
-  cursor: pointer;
-}
-
-.form-help {
-  margin: -5px 0 16px;
-  padding: 11px 12px;
-  border-radius: 13px;
-  background: #f1e7e1;
-  color: #755f54;
-  font-size: 11px;
-  line-height: 1.45;
-}
-
-.employee-form {
-  display: grid;
-  gap: 14px;
-}
-
-.employee-form label > span,
-.companies-fieldset legend {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.employee-form input,
-.employee-form select {
-  width: 100%;
-  padding: 13px 14px;
-  border: 1px solid #ded4cd;
-  border-radius: 14px;
-  outline: none;
-  background: #fff;
-  color: #17372f;
-  font: inherit;
-}
-
-.companies-fieldset {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.company-check {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 10px 12px;
-  border: 1px solid #e7ddd6;
-  border-radius: 13px;
-  background: #fff;
-}
-
-.company-check input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}
-
-.company-check span {
-  margin: 0 !important;
-}
-
-.time-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.calculated-hours {
-  display: flex;
-  justify-content: space-between;
-  padding: 13px 14px;
-  border-radius: 14px;
-  background: #efe5df;
-}
-
-.form-error {
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #f8e4df;
-  color: #a54e3b;
-  font-size: 12px;
-}
-
-.modal-actions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.cancel-button,
-.save-button {
-  padding: 13px;
-  border-radius: 14px;
-  font-family: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.cancel-button {
-  border: 1px solid #ded4cd;
-  background: #fff;
-  color: #17372f;
-}
-
-.save-button {
-  border: 0;
-  background: #17372f;
-  color: #fff;
-}
-
-.hours-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.hours-summary > div {
-  padding: 14px;
-  border-radius: 15px;
-  background: #f1e7e1;
-}
-
-.hours-summary span {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 10px;
-  color: #8c8580;
-}
-
-.employee-company-breakdown {
-  display: grid;
-  gap: 7px;
-  margin-bottom: 14px;
-}
-
-.employee-company-breakdown article {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 9px 11px;
-  border: 1px solid #e7ddd6;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 11px;
-}
-
-.add-hours-button {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 16px;
-  border: 0;
-  border-radius: 14px;
-  background: #c66b50;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.time-entry-card {
-  padding: 14px;
-  margin-bottom: 10px;
-  border: 1px solid #e7ddd6;
-  border-radius: 17px;
-  background: #fff;
-}
-
-.time-entry-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.time-entry-top p,
-.pause-line {
-  margin: 4px 0 0;
-  font-size: 12px;
-  color: #847d78;
-}
-
-.entry-company {
-  display: inline-block;
-  margin-top: 8px;
-  padding: 5px 8px;
-  border-radius: 9px;
-  background: #edf2ef;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.worked-badge {
-  height: fit-content;
-  padding: 6px 9px;
-  border-radius: 10px;
-  background: #edf2ef;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.time-entry-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 7px;
-  margin-top: 12px;
-}
-
-@media (max-width: 420px) {
   .admin-page {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left:
+      14px;
+
+    padding-right:
+      14px;
   }
 
-  .topbar h1 {
-    font-size: 24px;
+  h1 {
+    font-size:
+      24px;
   }
 
-  .global-summary,
-  .hours-summary,
-  .employee-month-summary {
-    grid-template-columns: 1fr 1fr;
+  .profile-button > span:last-child {
+    display:
+      none;
   }
 
-  .time-grid {
-    grid-template-columns: 1fr;
+  .profile-button {
+    padding:
+      5px;
   }
 
-  .employee-actions {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .hours-button {
-    grid-column: 1 / -1;
+  .month-summary {
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 }
 </style>

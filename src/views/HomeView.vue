@@ -1,212 +1,453 @@
 <template>
   <main class="home-page">
     <section class="page-content">
+
       <!-- HEADER -->
       <header class="topbar">
         <div>
           <p class="eyebrow">Bonjour</p>
-          <h1>{{ firstName || 'Bienvenue' }} 👋</h1>
-          <p class="date">{{ todayLabel }}</p>
+
+          <h1>
+            {{ firstName || 'Bienvenue' }} 👋
+          </h1>
+
+          <p class="date">
+            {{ todayLabel }}
+          </p>
         </div>
 
-        <RouterLink to="/profile" class="profile-button">
+        <RouterLink
+          to="/profile"
+          class="profile-button"
+        >
           {{ initial }}
         </RouterLink>
       </header>
 
-      <!-- CARTE PRINCIPALE -->
+      <!-- RÉSUMÉ -->
       <section class="hero-card">
-        <p class="hero-label">Aujourd’hui</p>
+        <p class="hero-label">
+          Aujourd’hui
+        </p>
 
-        <h2>{{ workedTimeLabel }}</h2>
+        <h2>
+          {{ todayPunches.length }}
+          {{ todayPunches.length > 1 ? 'vacations' : 'vacation' }}
+        </h2>
 
         <p class="hero-subtitle">
-  {{
-    todayTotalMinutes > 0
-      ? 'Temps travaillé enregistré'
-      : 'Aucune heure enregistrée'
-  }}
-</p>
+          {{
+            todayPunches.length > 0
+              ? 'Pointage enregistré'
+              : 'Aucun pointage pour le moment'
+          }}
+        </p>
 
         <div class="hero-line"></div>
 
-    <div class="hero-company-times">
-  <div
-    v-for="entry in todayEntries"
-    :key="entry.id"
-    class="hero-company-row"
-  >
-    <span class="hero-company-name">
-      {{ getCompanyName(entry.company_id) }}
-    </span>
+        <div class="hero-bottom">
+          <span>Montant du jour</span>
 
-    <strong>
-      {{ entry.start_time.slice(0, 5) }}
-      →
-      {{ entry.end_time.slice(0, 5) }}
-    </strong>
-  </div>
-
-  <p
-    v-if="todayEntries.length === 0"
-    class="hero-no-hours"
-  >
-    Aucun horaire enregistré aujourd’hui
-  </p>
-</div>
+          <strong>
+            {{ formatMoney(todayAmount) }}
+          </strong>
+        </div>
       </section>
 
-      <!-- RÉSUMÉ DU MOIS -->
+      <!-- VACATIONS DU JOUR -->
+      <section class="vacations-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">
+              Mes affectations
+            </p>
+
+            <h2>
+              Mes vacations aujourd’hui
+            </h2>
+          </div>
+        </div>
+
+        <!-- CHARGEMENT -->
+        <div
+          v-if="loading"
+          class="empty-card"
+        >
+          Chargement...
+        </div>
+
+        <!-- AUCUNE AFFECTATION -->
+        <div
+          v-else-if="assignments.length === 0"
+          class="empty-card"
+        >
+          <div class="empty-icon">—</div>
+
+          <strong>
+            Aucune affectation
+          </strong>
+
+          <p>
+            L’administratrice ne t’a encore
+            attribué aucun poste.
+          </p>
+        </div>
+
+        <!-- POSTES -->
+        <div
+          v-else
+          class="assignment-list"
+        >
+          <article
+            v-for="assignment in assignments"
+            :key="assignment.post.id"
+            class="assignment-card"
+          >
+            <!-- ENTÊTE POSTE -->
+            <div class="assignment-header">
+              <div>
+                <span
+                  class="service-badge"
+                  :class="assignment.post.service_type"
+                >
+                  {{
+                    serviceLabel(
+                      assignment.post.service_type
+                    )
+                  }}
+                </span>
+
+                <h3>
+                  {{ assignment.post.site_name }}
+                </h3>
+              </div>
+
+              <div class="rate-badge">
+                {{
+                  formatMoney(
+                    effectiveRate(assignment)
+                  )
+                }}
+              </div>
+            </div>
+
+            <!-- SÉCURITÉ -->
+            <div
+              v-if="
+                assignment.post.service_type ===
+                'security'
+              "
+              class="shift-list"
+            >
+              <!-- MIDI -->
+              <article
+                class="shift-card"
+                :class="{
+                  completed:
+                    hasPunched(
+                      assignment.post.id,
+                      'midi'
+                    )
+                }"
+              >
+                <div class="shift-left">
+                  <div class="shift-icon">
+                    ☀️
+                  </div>
+
+                  <div class="shift-info">
+                    <span>Midi</span>
+
+                    <strong>
+                      11h45
+                    </strong>
+
+                    <small>
+                      {{
+                        formatMoney(
+                          effectiveRate(assignment)
+                        )
+                      }}
+                    </small>
+                  </div>
+                </div>
+
+                <!-- DÉJÀ POINTÉ -->
+                <div
+                  v-if="
+                    getPunch(
+                      assignment.post.id,
+                      'midi'
+                    )
+                  "
+                  class="punched-state"
+                >
+                  <span>✓ Pointé</span>
+
+                  <strong>
+                    {{
+                      punchTime(
+                        getPunch(
+                          assignment.post.id,
+                          'midi'
+                        )!
+                      )
+                    }}
+                  </strong>
+                </div>
+
+                <!-- POINTER -->
+                <button
+                  v-else
+                  type="button"
+                  class="punch-button"
+                  :disabled="
+                    punchingKey ===
+                    `${assignment.post.id}-midi`
+                  "
+                  @click="
+                    punch(
+                      assignment,
+                      'midi'
+                    )
+                  "
+                >
+                  {{
+                    punchingKey ===
+                    `${assignment.post.id}-midi`
+                      ? 'Pointage...'
+                      : 'Pointer'
+                  }}
+                </button>
+              </article>
+
+              <!-- SOIR -->
+              <article
+                class="shift-card"
+                :class="{
+                  completed:
+                    hasPunched(
+                      assignment.post.id,
+                      'soir'
+                    )
+                }"
+              >
+                <div class="shift-left">
+                  <div class="shift-icon">
+                    🌙
+                  </div>
+
+                  <div class="shift-info">
+                    <span>Soir</span>
+
+                    <strong>
+                      18h45
+                    </strong>
+
+                    <small>
+                      {{
+                        formatMoney(
+                          effectiveRate(assignment)
+                        )
+                      }}
+                    </small>
+                  </div>
+                </div>
+
+                <div
+                  v-if="
+                    getPunch(
+                      assignment.post.id,
+                      'soir'
+                    )
+                  "
+                  class="punched-state"
+                >
+                  <span>✓ Pointé</span>
+
+                  <strong>
+                    {{
+                      punchTime(
+                        getPunch(
+                          assignment.post.id,
+                          'soir'
+                        )!
+                      )
+                    }}
+                  </strong>
+                </div>
+
+                <button
+                  v-else
+                  type="button"
+                  class="punch-button"
+                  :disabled="
+                    punchingKey ===
+                    `${assignment.post.id}-soir`
+                  "
+                  @click="
+                    punch(
+                      assignment,
+                      'soir'
+                    )
+                  "
+                >
+                  {{
+                    punchingKey ===
+                    `${assignment.post.id}-soir`
+                      ? 'Pointage...'
+                      : 'Pointer'
+                  }}
+                </button>
+              </article>
+            </div>
+
+            <!-- MÉNAGE -->
+            <div
+              v-else
+              class="shift-list"
+            >
+              <article
+                class="shift-card"
+                :class="{
+                  completed:
+                    hasPunched(
+                      assignment.post.id,
+                      'jour'
+                    )
+                }"
+              >
+                <div class="shift-left">
+                  <div class="shift-icon">
+                    ✨
+                  </div>
+
+                  <div class="shift-info">
+                    <span>
+                      Vacation du jour
+                    </span>
+
+                    <strong>
+                      Ménage
+                    </strong>
+
+                    <small>
+                      {{
+                        formatMoney(
+                          effectiveRate(assignment)
+                        )
+                      }}
+                    </small>
+                  </div>
+                </div>
+
+                <div
+                  v-if="
+                    getPunch(
+                      assignment.post.id,
+                      'jour'
+                    )
+                  "
+                  class="punched-state"
+                >
+                  <span>✓ Pointé</span>
+
+                  <strong>
+                    {{
+                      punchTime(
+                        getPunch(
+                          assignment.post.id,
+                          'jour'
+                        )!
+                      )
+                    }}
+                  </strong>
+                </div>
+
+                <button
+                  v-else
+                  type="button"
+                  class="punch-button"
+                  :disabled="
+                    punchingKey ===
+                    `${assignment.post.id}-jour`
+                  "
+                  @click="
+                    punch(
+                      assignment,
+                      'jour'
+                    )
+                  "
+                >
+                  {{
+                    punchingKey ===
+                    `${assignment.post.id}-jour`
+                      ? 'Pointage...'
+                      : 'Pointer'
+                  }}
+                </button>
+              </article>
+            </div>
+          </article>
+        </div>
+
+        <p
+          v-if="errorMessage"
+          class="message error"
+        >
+          {{ errorMessage }}
+        </p>
+
+        <p
+          v-if="successMessage"
+          class="message success"
+        >
+          {{ successMessage }}
+        </p>
+      </section>
+
+      <!-- MOIS -->
       <section class="summary-section">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Ce mois-ci</p>
-            <h2>{{ currentMonthLabel }}</h2>
+            <p class="eyebrow">
+              Ce mois-ci
+            </p>
+
+            <h2>
+              {{ currentMonthLabel }}
+            </h2>
           </div>
 
-          <RouterLink to="/month" class="see-more">
+          <RouterLink
+            to="/month"
+            class="see-more"
+          >
             Voir le mois →
           </RouterLink>
         </div>
 
         <div class="summary-grid">
           <article class="summary-card">
-            <span>Heures</span>
-            <strong>{{ monthWorkedLabel }}</strong>
+            <span>Vacations</span>
+
+            <strong>
+              {{ validMonthPunches.length }}
+            </strong>
           </article>
 
           <article class="summary-card">
-            <span>Salaire estimé</span>
-            <strong>{{ monthSalaryLabel }} €</strong>
+            <span>Montant</span>
+
+            <strong>
+              {{ formatMoney(monthAmount) }}
+            </strong>
           </article>
         </div>
       </section>
 
-      <!-- HORAIRES DU JOUR -->
-      <section class="hours-section">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Ma journée</p>
-            <h2>Mes horaires</h2>
-          </div>
-        </div>
-
-        <div class="hours-card">
-          <div class="company-field">
-            <label for="company">Société</label>
-
-            <select
-              id="company"
-              v-model="selectedCompanyId"
-              :disabled="companies.length <= 1"
-            >
-              <option
-                v-if="companies.length === 0"
-                value=""
-              >
-                Aucune société attribuée
-              </option>
-
-              <option
-                v-for="company in companies"
-                :key="company.id"
-                :value="company.id"
-              >
-                {{ company.name }}
-              </option>
-            </select>
-
-            <p
-              v-if="companies.length === 0"
-              class="company-help"
-            >
-              Demande à l’administratrice de t’attribuer une société.
-            </p>
-          </div>
-
-          <div class="time-grid">
-            <label>
-              <span>Début</span>
-
-              <input
-                v-model="form.startTime"
-                type="time"
-              />
-            </label>
-
-            <label>
-              <span>Fin</span>
-
-              <input
-                v-model="form.endTime"
-                type="time"
-              />
-            </label>
-          </div>
-
-          <div class="pause-title">
-            Pause
-            <span>optionnel</span>
-          </div>
-
-          <div class="time-grid">
-            <label>
-              <span>Début pause</span>
-
-              <input
-                v-model="form.pauseStart"
-                type="time"
-              />
-            </label>
-
-            <label>
-              <span>Fin pause</span>
-
-              <input
-                v-model="form.pauseEnd"
-                type="time"
-              />
-            </label>
-          </div>
-
-          <div class="worked-preview">
-            <span>Temps travaillé</span>
-            <strong>{{ calculatedWorkedLabel }}</strong>
-          </div>
-
-          <p
-            v-if="errorMessage"
-            class="message error"
-          >
-            {{ errorMessage }}
-          </p>
-
-          <p
-            v-if="successMessage"
-            class="message success"
-          >
-            {{ successMessage }}
-          </p>
-
-          <button
-            type="button"
-            class="save-button"
-            :disabled="saving"
-            @click="saveToday"
-          >
-            {{
-              saving
-                ? 'Enregistrement...'
-                : todayEntry
-                  ? 'Modifier mes horaires'
-                  : 'Enregistrer mes horaires'
-            }}
-          </button>
-        </div>
-      </section>
     </section>
 
-    <!-- NAVIGATION EMPLOYÉ -->
     <EmployeeBottomNav />
   </main>
 </template>
@@ -216,7 +457,6 @@ import {
   computed,
   onMounted,
   ref,
-  watch,
 } from 'vue'
 
 import {
@@ -224,82 +464,110 @@ import {
   useRouter,
 } from 'vue-router'
 
-import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
-import { supabase } from '../lib/supabase'
+import EmployeeBottomNav
+  from '../components/EmployeeBottomNav.vue'
 
-interface Company {
+import {
+  supabase,
+} from '../lib/supabase'
+
+type ServiceType =
+  | 'security'
+  | 'cleaning'
+
+type VacationType =
+  | 'midi'
+  | 'soir'
+  | 'jour'
+
+interface Post {
   id: string
-  name: string
+  service_type: ServiceType
+  site_name: string
+  base_rate: number
+  active: boolean
 }
 
-interface TimeEntry {
+interface Assignment {
+  post_id: string
+  custom_rate: number | null
+  post: Post
+}
+
+interface Punch {
   id: string
-  user_id: string
-  company_id: string | null
+  employee_id: string
+  post_id: string
+  vacation_type: VacationType
   work_date: string
-  start_time: string
-  pause_start: string | null
-  pause_end: string | null
-  end_time: string
-  worked_minutes: number
-  status: string
+  scheduled_time: string | null
+  punched_at: string
+  applied_rate: number
+  status:
+    | 'validated'
+    | 'suspicious'
+    | 'contested'
+  anomaly_reason: string | null
 }
 
 const router = useRouter()
 
 const firstName = ref('')
-const lastName = ref('')
-const hourlyRate = ref(0)
+const employeeId = ref('')
 
-const companies = ref<Company[]>([])
-const selectedCompanyId = ref('')
+const assignments =
+  ref<Assignment[]>([])
 
-const todayEntry = ref<TimeEntry | null>(null)
-const monthEntries = ref<TimeEntry[]>([])
+const monthPunches =
+  ref<Punch[]>([])
 
-const saving = ref(false)
+const loading = ref(true)
+
+const punchingKey =
+  ref<string | null>(null)
+
 const errorMessage = ref('')
 const successMessage = ref('')
 
-const emptyForm = () => ({
-  startTime: '',
-  pauseStart: '',
-  pauseEnd: '',
-  endTime: '',
-})
-
-const form = ref(emptyForm())
+/* =========================
+   DATES
+========================= */
 
 const now = new Date()
 
 const localDate = (
   date: Date
 ) => {
-  const year = date.getFullYear()
+  const year =
+    date.getFullYear()
 
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, '0')
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, '0')
 
-  const day = String(
-    date.getDate()
-  ).padStart(2, '0')
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, '0')
 
   return `${year}-${month}-${day}`
 }
 
-const today = localDate(now)
+const today =
+  localDate(now)
 
 const monthStart =
   `${now.getFullYear()}-${String(
     now.getMonth() + 1
   ).padStart(2, '0')}-01`
 
-const lastDay = new Date(
-  now.getFullYear(),
-  now.getMonth() + 1,
-  0
-).getDate()
+const lastDay =
+  new Date(
+    now.getFullYear(),
+    now.getMonth() + 1,
+    0
+  ).getDate()
 
 const monthEnd =
   `${now.getFullYear()}-${String(
@@ -308,348 +576,227 @@ const monthEnd =
     lastDay
   ).padStart(2, '0')}`
 
-const initial = computed(() => {
-  return (
-    firstName.value
-      .charAt(0)
-      .toUpperCase() || 'T'
-  )
-})
+/* =========================
+   LABELS
+========================= */
 
-const todayLabel = computed(() => {
-  return new Intl.DateTimeFormat(
-    'fr-FR',
-    {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-    }
-  ).format(now)
-})
-
-const currentMonthLabel = computed(() => {
-  return new Intl.DateTimeFormat(
-    'fr-FR',
-    {
-      month: 'long',
-      year: 'numeric',
-    }
-  ).format(now)
-})
-
-const minutesFromTime = (
-  time: string
-) => {
-  if (!time) {
-    return 0
-  }
-
-  const [hours, minutes] =
-    time.split(':').map(Number)
-
-  return hours * 60 + minutes
-}
-
-const calculatedWorkedMinutes =
+const initial =
   computed(() => {
-    if (
-      !form.value.startTime ||
-      !form.value.endTime
-    ) {
-      return 0
-    }
-
-    const start =
-      minutesFromTime(
-        form.value.startTime
-      )
-
-    const end =
-      minutesFromTime(
-        form.value.endTime
-      )
-
-    if (end <= start) {
-      return 0
-    }
-
-    let pause = 0
-
-    if (
-      form.value.pauseStart ||
-      form.value.pauseEnd
-    ) {
-      if (
-        !form.value.pauseStart ||
-        !form.value.pauseEnd
-      ) {
-        return 0
-      }
-
-      const pauseStart =
-        minutesFromTime(
-          form.value.pauseStart
-        )
-
-      const pauseEnd =
-        minutesFromTime(
-          form.value.pauseEnd
-        )
-
-      if (
-        pauseEnd <= pauseStart ||
-        pauseStart < start ||
-        pauseEnd > end
-      ) {
-        return 0
-      }
-
-      pause =
-        pauseEnd - pauseStart
-    }
-
-    return Math.max(
-      0,
-      end - start - pause
+    return (
+      firstName.value
+        .charAt(0)
+        .toUpperCase() || 'T'
     )
   })
 
-const formatMinutes = (
-  minutes: number
+const todayLabel =
+  computed(() => {
+    return new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      }
+    ).format(now)
+  })
+
+const currentMonthLabel =
+  computed(() => {
+    return new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        month: 'long',
+        year: 'numeric',
+      }
+    ).format(now)
+  })
+
+const serviceLabel = (
+  service: ServiceType
 ) => {
-  const hours =
-    Math.floor(minutes / 60)
-
-  const remaining =
-    minutes % 60
-
-  if (remaining === 0) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${String(
-    remaining
-  ).padStart(2, '0')}`
+  return service === 'security'
+    ? 'Sécurité'
+    : 'Ménage'
 }
 
-const calculatedWorkedLabel =
-  computed(() =>
-    formatMinutes(
-      calculatedWorkedMinutes.value
-    )
-  )
-
-const todayTotalMinutes = computed(() => {
-  return monthEntries.value
-    .filter(
-      (entry) =>
-        entry.work_date === today
-    )
-    .reduce(
-      (total, entry) =>
-        total +
-        Number(entry.worked_minutes ?? 0),
-      0
-    )
-})
-
-const todayEntries = computed(() => {
-  return monthEntries.value
-    .filter(
-      (entry) =>
-        entry.work_date === today
-    )
-    .sort(
-      (a, b) =>
-        a.start_time.localeCompare(
-          b.start_time
-        )
-    )
-})
-
-const getCompanyName = (
-  companyId: string | null
+const formatMoney = (
+  value: number
 ) => {
-  if (!companyId) {
-    return 'Société'
-  }
-
   return (
-    companies.value.find(
-      (company) =>
-        company.id === companyId
-    )?.name ?? 'Société'
+    Number(value)
+      .toFixed(2)
+      .replace('.', ',') +
+    ' €'
   )
 }
 
-const workedTimeLabel = computed(() => {
-  return formatMinutes(
-    todayTotalMinutes.value
+const effectiveRate = (
+  assignment: Assignment
+) => {
+  return (
+    assignment.custom_rate ??
+    assignment.post.base_rate
   )
-})
+}
 
-const monthMinutes =
-  computed(() =>
-    monthEntries.value.reduce(
-      (total, entry) =>
+/* =========================
+   POINTAGES
+========================= */
+
+const validMonthPunches =
+  computed(() => {
+    return monthPunches.value.filter(
+      (punch) =>
+        punch.status !== 'contested'
+    )
+  })
+
+const todayPunches =
+  computed(() => {
+    return validMonthPunches.value.filter(
+      (punch) =>
+        punch.work_date === today
+    )
+  })
+
+const todayAmount =
+  computed(() => {
+    return todayPunches.value.reduce(
+      (total, punch) =>
         total +
         Number(
-          entry.worked_minutes ?? 0
+          punch.applied_rate ?? 0
         ),
       0
     )
-  )
+  })
 
-const monthWorkedLabel =
-  computed(() =>
-    formatMinutes(
-      monthMinutes.value
+const monthAmount =
+  computed(() => {
+    return validMonthPunches.value.reduce(
+      (total, punch) =>
+        total +
+        Number(
+          punch.applied_rate ?? 0
+        ),
+      0
     )
+  })
+
+const getPunch = (
+  postId: string,
+  vacationType: VacationType
+) => {
+  return monthPunches.value.find(
+    (punch) =>
+      punch.post_id === postId &&
+      punch.vacation_type ===
+        vacationType &&
+      punch.work_date === today
   )
-
-const monthSalary =
-  computed(() =>
-    (
-      monthMinutes.value /
-      60 *
-      hourlyRate.value
-    )
-  )
-
-const monthSalaryLabel =
-  computed(() =>
-    monthSalary.value
-      .toFixed(2)
-      .replace('.', ',')
-  )
-
-const syncTodayEntry = () => {
-  if (!selectedCompanyId.value) {
-    todayEntry.value = null
-    form.value = emptyForm()
-    return
-  }
-
-  todayEntry.value =
-    monthEntries.value.find(
-      (entry) =>
-        entry.work_date === today &&
-        entry.company_id ===
-          selectedCompanyId.value
-    ) ?? null
-
-  if (!todayEntry.value) {
-    form.value = emptyForm()
-    return
-  }
-
-  form.value = {
-    startTime:
-      todayEntry.value
-        .start_time
-        ?.slice(0, 5) ?? '',
-
-    pauseStart:
-      todayEntry.value
-        .pause_start
-        ?.slice(0, 5) ?? '',
-
-    pauseEnd:
-      todayEntry.value
-        .pause_end
-        ?.slice(0, 5) ?? '',
-
-    endTime:
-      todayEntry.value
-        .end_time
-        ?.slice(0, 5) ?? '',
-  }
 }
 
-const loadCompanies = async (
-  userId: string
+const hasPunched = (
+  postId: string,
+  vacationType: VacationType
 ) => {
+  return Boolean(
+    getPunch(
+      postId,
+      vacationType
+    )
+  )
+}
+
+const punchTime = (
+  punch: Punch
+) => {
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: 'Europe/Paris',
+    }
+  ).format(
+    new Date(punch.punched_at)
+  )
+}
+
+/* =========================
+   CHARGEMENT
+========================= */
+
+const loadPunches = async () => {
+  if (!employeeId.value) {
+    monthPunches.value = []
+    return
+  }
+
   const {
-    data: employee,
-    error: employeeError,
+    data,
+    error,
   } = await supabase
-    .from('employees')
-    .select('id')
-    .eq('auth_user_id', userId)
-    .maybeSingle()
-
-  if (employeeError) {
-    console.error(employeeError)
-    companies.value = []
-    selectedCompanyId.value = ''
-    return
-  }
-
-  if (!employee) {
-    companies.value = []
-    selectedCompanyId.value = ''
-    return
-  }
-
-  const {
-    data: links,
-    error: linksError,
-  } = await supabase
-    .from('employee_companies')
-    .select('company_id')
-    .eq('employee_id', employee.id)
-
-  if (linksError) {
-    console.error(linksError)
-    companies.value = []
-    selectedCompanyId.value = ''
-    return
-  }
-
-  const companyIds =
-    (links ?? []).map(
-      (link) => link.company_id
+    .from('punches')
+    .select(`
+      id,
+      employee_id,
+      post_id,
+      vacation_type,
+      work_date,
+      scheduled_time,
+      punched_at,
+      applied_rate,
+      status,
+      anomaly_reason
+    `)
+    .eq(
+      'employee_id',
+      employeeId.value
+    )
+    .gte(
+      'work_date',
+      monthStart
+    )
+    .lte(
+      'work_date',
+      monthEnd
+    )
+    .order(
+      'punched_at',
+      {
+        ascending: false,
+      }
     )
 
-  if (companyIds.length === 0) {
-    companies.value = []
-    selectedCompanyId.value = ''
+  if (error) {
+    console.error(error)
+
+    errorMessage.value =
+      'Impossible de charger les pointages.'
+
     return
   }
 
-  const {
-    data: companyRows,
-    error: companiesError,
-  } = await supabase
-    .from('companies')
-    .select('id, name')
-    .in('id', companyIds)
-    .order('name')
+  monthPunches.value =
+    (data ?? []).map(
+      (punch) => ({
+        ...punch,
 
-  if (companiesError) {
-    console.error(companiesError)
-    companies.value = []
-    selectedCompanyId.value = ''
-    return
-  }
-
-  companies.value =
-    (companyRows ?? []) as Company[]
-
-  const stillExists =
-    companies.value.some(
-      (company) =>
-        company.id ===
-        selectedCompanyId.value
-    )
-
-  if (!stillExists) {
-    selectedCompanyId.value =
-      companies.value[0]?.id ?? ''
-  }
+        applied_rate:
+          Number(
+            punch.applied_rate ?? 0
+          ),
+      })
+    ) as Punch[]
 }
 
 const loadData = async () => {
+  loading.value = true
+  errorMessage.value = ''
+
   const {
     data: { user },
   } =
@@ -667,8 +814,6 @@ const loadData = async () => {
     .from('profiles')
     .select(`
       first_name,
-      last_name,
-      hourly_rate,
       role
     `)
     .eq('id', user.id)
@@ -678,9 +823,7 @@ const loadData = async () => {
     profileError ||
     !profile
   ) {
-    console.error(
-      profileError
-    )
+    console.error(profileError)
 
     await supabase.auth.signOut()
     await router.push('/')
@@ -688,9 +831,7 @@ const loadData = async () => {
     return
   }
 
-  if (
-    profile.role === 'admin'
-  ) {
+  if (profile.role === 'admin') {
     await router.push('/admin')
     return
   }
@@ -698,229 +839,265 @@ const loadData = async () => {
   firstName.value =
     profile.first_name ?? ''
 
-  lastName.value =
-    profile.last_name ?? ''
-
-  hourlyRate.value =
-    Number(
-      profile.hourly_rate ?? 0
-    )
-
-  await loadCompanies(user.id)
+  /*
+    On retrouve l'employé lié
+    au compte connecté.
+  */
 
   const {
-    data: entries,
-    error: entriesError,
+    data: employee,
+    error: employeeError,
   } = await supabase
-    .from('time_entries')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte(
-      'work_date',
-      monthStart
+    .from('employees')
+    .select(`
+      id,
+      first_name
+    `)
+    .eq(
+      'auth_user_id',
+      user.id
     )
-    .lte(
-      'work_date',
-      monthEnd
-    )
-    .order(
-      'work_date',
-      {
-        ascending: false,
-      }
-    )
+    .maybeSingle()
 
-  if (entriesError) {
-    console.error(
-      entriesError
-    )
+  if (employeeError) {
+    console.error(employeeError)
 
+    errorMessage.value =
+      'Impossible de charger ton profil employé.'
+
+    loading.value = false
     return
   }
 
-  monthEntries.value =
-    (entries ?? []).map(
-      (entry) => ({
-        ...entry,
-        worked_minutes:
-          Number(
-            entry.worked_minutes ??
-            0
-          ),
-      })
+  if (!employee) {
+    assignments.value = []
+    monthPunches.value = []
+    loading.value = false
+    return
+  }
+
+  employeeId.value =
+    employee.id
+
+  /*
+    On récupère les affectations
+    décidées par l'admin.
+  */
+
+  const {
+    data: links,
+    error: linksError,
+  } = await supabase
+    .from('employee_posts')
+    .select(`
+      post_id,
+      custom_rate
+    `)
+    .eq(
+      'employee_id',
+      employee.id
+    )
+    .eq(
+      'active',
+      true
     )
 
-  syncTodayEntry()
+  if (linksError) {
+    console.error(linksError)
+
+    errorMessage.value =
+      'Impossible de charger tes affectations.'
+
+    loading.value = false
+    return
+  }
+
+  const postIds =
+    (links ?? []).map(
+      (link) =>
+        link.post_id
+    )
+
+  if (postIds.length === 0) {
+    assignments.value = []
+
+    await loadPunches()
+
+    loading.value = false
+    return
+  }
+
+  const {
+    data: postRows,
+    error: postsError,
+  } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      service_type,
+      site_name,
+      base_rate,
+      active
+    `)
+    .in(
+      'id',
+      postIds
+    )
+    .eq(
+      'active',
+      true
+    )
+
+  if (postsError) {
+    console.error(postsError)
+
+    errorMessage.value =
+      'Impossible de charger les postes.'
+
+    loading.value = false
+    return
+  }
+
+  assignments.value =
+    (links ?? [])
+      .map((link) => {
+        const post =
+          (postRows ?? []).find(
+            (item) =>
+              item.id ===
+              link.post_id
+          )
+
+        if (!post) {
+          return null
+        }
+
+        return {
+          post_id:
+            link.post_id,
+
+          custom_rate:
+            link.custom_rate === null
+              ? null
+              : Number(
+                  link.custom_rate
+                ),
+
+          post: {
+            ...post,
+
+            base_rate:
+              Number(
+                post.base_rate ?? 0
+              ),
+          },
+        }
+      })
+      .filter(
+        (
+          assignment
+        ): assignment is Assignment =>
+          assignment !== null
+      )
+
+  await loadPunches()
+
+  loading.value = false
 }
 
-const saveToday = async () => {
+/* =========================
+   POINTER
+========================= */
+
+const punch = async (
+  assignment: Assignment,
+  vacationType: VacationType
+) => {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (!selectedCompanyId.value) {
-    errorMessage.value =
-      'Aucune société ne t’a été attribuée.'
-
-    return
-  }
+  const key =
+    `${assignment.post.id}-${vacationType}`
 
   if (
-    !form.value.startTime ||
-    !form.value.endTime
-  ) {
-    errorMessage.value =
-      'Renseigne ton heure de début et de fin.'
-
-    return
-  }
-
-  const start =
-    minutesFromTime(
-      form.value.startTime
-    )
-
-  const end =
-    minutesFromTime(
-      form.value.endTime
-    )
-
-  if (end <= start) {
-    errorMessage.value =
-      'L’heure de fin doit être après l’heure de début.'
-
-    return
-  }
-
-  if (
-    Boolean(
-      form.value.pauseStart
-    ) !==
-    Boolean(
-      form.value.pauseEnd
+    hasPunched(
+      assignment.post.id,
+      vacationType
     )
   ) {
     errorMessage.value =
-      'Renseigne le début et la fin de la pause, ou laisse les deux champs vides.'
+      'Cette vacation a déjà été pointée.'
 
     return
   }
 
-  if (
-    form.value.pauseStart &&
-    form.value.pauseEnd
-  ) {
-    const pauseStart =
-      minutesFromTime(
-        form.value.pauseStart
-      )
-
-    const pauseEnd =
-      minutesFromTime(
-        form.value.pauseEnd
-      )
-
-    if (
-      pauseEnd <= pauseStart ||
-      pauseStart < start ||
-      pauseEnd > end
-    ) {
-      errorMessage.value =
-        'Les horaires de pause ne sont pas valides.'
-
-      return
-    }
-  }
-
-  if (
-    calculatedWorkedMinutes.value <=
-    0
-  ) {
-    errorMessage.value =
-      'Les horaires renseignés ne sont pas valides.'
-
-    return
-  }
-
-  saving.value = true
+  punchingKey.value = key
 
   const {
-    data: { user },
-  } =
-    await supabase.auth.getUser()
+    data,
+    error,
+  } = await supabase.rpc(
+    'punch_vacation',
+    {
+      p_post_id:
+        assignment.post.id,
 
-  if (!user) {
-    saving.value = false
-    await router.push('/')
-    return
-  }
+      p_vacation_type:
+        vacationType,
+    }
+  )
 
-  const payload = {
-    user_id: user.id,
-    company_id:
-      selectedCompanyId.value,
-    work_date: today,
-    start_time:
-      form.value.startTime,
-    pause_start:
-      form.value.pauseStart ||
-      null,
-    pause_end:
-      form.value.pauseEnd ||
-      null,
-    end_time:
-      form.value.endTime,
-    worked_minutes:
-      calculatedWorkedMinutes.value,
-    status: 'pending',
-  }
-
-  let error = null
-
-  if (todayEntry.value) {
-    const result =
-      await supabase
-        .from('time_entries')
-        .update(payload)
-        .eq(
-          'id',
-          todayEntry.value.id
-        )
-
-    error = result.error
-  } else {
-    const result =
-      await supabase
-        .from('time_entries')
-        .insert(payload)
-
-    error = result.error
-  }
-
-  saving.value = false
+  punchingKey.value = null
 
   if (error) {
     console.error(error)
 
-    errorMessage.value =
-      'Impossible d’enregistrer les horaires.'
+    if (
+      error.message.includes(
+        'ALREADY_PUNCHED'
+      )
+    ) {
+      errorMessage.value =
+        'Cette vacation a déjà été pointée.'
+    } else if (
+      error.message.includes(
+        'POST_NOT_AUTHORIZED'
+      )
+    ) {
+      errorMessage.value =
+        'Tu n’es pas autorisé à pointer sur ce poste.'
+    } else {
+      errorMessage.value =
+        'Impossible d’enregistrer le pointage.'
+    }
 
+    await loadPunches()
     return
   }
 
-  successMessage.value =
-    'Tes horaires ont bien été enregistrés.'
+  await loadPunches()
 
-  await loadData()
+  const returnedPunch =
+    Array.isArray(data)
+      ? data[0]
+      : data
+
+  const time =
+    returnedPunch?.punched_at
+      ? punchTime(
+          returnedPunch as Punch
+        )
+      : ''
+
+  successMessage.value =
+    time
+      ? `Pointage enregistré à ${time}.`
+      : 'Pointage enregistré.'
 }
 
-watch(
-  selectedCompanyId,
-  () => {
-    errorMessage.value = ''
-    successMessage.value = ''
-    syncTodayEntry()
-  }
-)
+/* =========================
+   DÉMARRAGE
+========================= */
 
 onMounted(async () => {
   await loadData()
@@ -951,6 +1128,8 @@ onMounted(async () => {
   margin: 0 auto;
 }
 
+/* HEADER */
+
 .topbar {
   display: flex;
   align-items: flex-start;
@@ -966,8 +1145,8 @@ onMounted(async () => {
 
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 1.5px;
 
+  letter-spacing: 1.5px;
   text-transform: uppercase;
 
   color: #a08173;
@@ -991,7 +1170,6 @@ onMounted(async () => {
   margin: 5px 0 0;
 
   font-size: 12px;
-
   text-transform: capitalize;
 
   color: #817b76;
@@ -1009,29 +1187,41 @@ onMounted(async () => {
   border-radius: 50%;
 
   background: #17372f;
-  color: #fff;
-
-  font-size: 17px;
-  font-weight: 700;
+  color: white;
 
   text-decoration: none;
+
+  font-size: 14px;
+  font-weight: 800;
 }
+
+/* HERO */
 
 .hero-card {
   padding: 24px;
 
-  border-radius: 28px;
+  margin-bottom: 30px;
+
+  border-radius: 26px;
 
   background: #17372f;
-  color: #fff;
+  color: white;
+
+  box-shadow:
+    0 14px 35px
+    rgba(23, 55, 47, 0.12);
 }
 
 .hero-label {
-  margin: 0 0 7px;
+  margin: 0 0 8px;
 
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 700;
 
-  color: #d6c2b9;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+
+  opacity: 0.65;
 }
 
 .hero-card h2 {
@@ -1042,100 +1232,60 @@ onMounted(async () => {
     'Times New Roman',
     serif;
 
-  font-size: 43px;
+  font-size: 31px;
   font-weight: 400;
 }
 
 .hero-subtitle {
   margin: 5px 0 0;
 
-  font-size: 12px;
+  font-size: 11px;
 
-  color: #c8d1cd;
+  opacity: 0.7;
 }
 
 .hero-line {
   height: 1px;
 
-  margin: 22px 0 17px;
+  margin: 20px 0 15px;
 
   background:
-    rgba(
-      255,
-      255,
-      255,
-      0.15
-    );
+    rgba(255, 255, 255, 0.15);
 }
 
-.hero-company-times {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.hero-company-row {
+.hero-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   gap: 15px;
-
-  padding: 10px 12px;
-
-  border-radius: 13px;
-
-  background: rgba(255, 255, 255, 0.08);
 }
 
-.hero-company-name {
+.hero-bottom span {
   font-size: 11px;
-  color: #d6c2b9;
+
+  opacity: 0.65;
 }
 
-.hero-company-row strong {
-  font-size: 14px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.hero-no-hours {
-  margin: 0;
-  font-size: 11px;
-  color: #c8d1cd;
-}
-
-.hero-times div {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 3px;
-}
-
-.hero-times span {
-  font-size: 10px;
-
-  color: #c8d1cd;
-}
-
-.hero-times strong {
+.hero-bottom strong {
   font-size: 16px;
 }
 
-.summary-section,
-.hours-section {
-  margin-top: 29px;
+/* SECTIONS */
+
+.vacations-section,
+.summary-section {
+  margin-bottom: 30px;
 }
 
 .section-heading {
   display: flex;
-
   align-items: flex-end;
   justify-content: space-between;
 
   gap: 15px;
 
-  margin-bottom: 13px;
+  margin-bottom: 14px;
 }
 
 .section-heading h2 {
@@ -1148,302 +1298,397 @@ onMounted(async () => {
 
   font-size: 22px;
   font-weight: 400;
+
+  color: #17372f;
 }
 
 .see-more {
+  flex-shrink: 0;
+
   padding-bottom: 2px;
 
-  color: #755e53;
-
-  font-size: 11px;
-
   text-decoration: none;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  color: #a85f49;
 }
 
-.summary-grid {
-  display: grid;
+/* AFFECTATIONS */
 
-  grid-template-columns:
-    1fr 1fr;
+.assignment-list {
+  display: flex;
+  flex-direction: column;
 
-  gap: 11px;
+  gap: 14px;
 }
 
-.summary-card {
+.assignment-card {
   padding: 18px;
 
   border:
-    1px solid
-    #eadfd8;
+    1px solid #eadfd8;
 
-  border-radius: 20px;
+  border-radius: 24px;
 
-  background: #fff;
+  background: white;
+
+  box-shadow:
+    0 8px 25px
+    rgba(62, 48, 42, 0.035);
+}
+
+.assignment-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 15px;
+}
+
+.service-badge {
+  display: inline-flex;
+
+  padding: 5px 8px;
+
+  margin-bottom: 7px;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.service-badge.security {
+  background: #e7eeea;
+  color: #17372f;
+}
+
+.service-badge.cleaning {
+  background: #f6e8e2;
+  color: #a85f49;
+}
+
+.assignment-header h3 {
+  margin: 0;
+
+  font-size: 15px;
+
+  color: #17372f;
+}
+
+.rate-badge {
+  flex-shrink: 0;
+
+  padding: 7px 9px;
+
+  border-radius: 11px;
+
+  background: #f5efe9;
+
+  font-size: 11px;
+  font-weight: 800;
+
+  color: #a85f49;
+}
+
+/* VACATIONS */
+
+.shift-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.shift-card {
+  min-height: 82px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 12px;
+
+  border:
+    1px solid #ebe3de;
+
+  border-radius: 17px;
+
+  background: #fbf8f6;
+}
+
+.shift-card.completed {
+  border-color: #cad8d0;
+
+  background: #f0f5f2;
+}
+
+.shift-left {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+}
+
+.shift-icon {
+  width: 38px;
+  height: 38px;
+
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 12px;
+
+  background: white;
+
+  font-size: 17px;
+}
+
+.shift-info {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 1px;
+}
+
+.shift-info span {
+  font-size: 10px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  color: #8c8580;
+}
+
+.shift-info strong {
+  font-size: 16px;
+
+  color: #17372f;
+}
+
+.shift-info small {
+  margin-top: 1px;
+
+  font-size: 9px;
+
+  color: #a85f49;
+}
+
+/* BOUTON POINTER */
+
+.punch-button {
+  min-width: 83px;
+  min-height: 40px;
+
+  flex-shrink: 0;
+
+  padding: 0 13px;
+
+  border: none;
+  border-radius: 13px;
+
+  background: #17372f;
+  color: white;
+
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+
+  cursor: pointer;
+}
+
+.punch-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* DÉJÀ POINTÉ */
+
+.punched-state {
+  flex-shrink: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.punched-state span {
+  font-size: 9px;
+  font-weight: 800;
+
+  text-transform: uppercase;
+
+  color: #46715f;
+}
+
+.punched-state strong {
+  font-size: 13px;
+
+  color: #17372f;
+}
+
+/* RÉSUMÉ MOIS */
+
+.summary-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap: 10px;
+}
+
+.summary-card {
+  padding: 17px;
+
+  border:
+    1px solid #eadfd8;
+
+  border-radius: 19px;
+
+  background: white;
 }
 
 .summary-card span {
   display: block;
 
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 
-  color: #8b8580;
+  font-size: 10px;
 
-  font-size: 11px;
+  color: #8c8580;
 }
 
 .summary-card strong {
-  font-size: 20px;
+  font-size: 18px;
 
   color: #17372f;
 }
 
-.hours-card {
-  padding: 20px;
+/* VIDE */
+
+.empty-card {
+  padding: 28px 20px;
 
   border:
-    1px solid
-    #eadfd8;
+    1px solid #eadfd8;
 
-  border-radius: 24px;
+  border-radius: 22px;
 
-  background: #fff;
+  background: white;
+
+  text-align: center;
 }
 
-.company-field {
-  margin-bottom: 20px;
-}
+.empty-icon {
+  width: 42px;
+  height: 42px;
 
-.company-field label {
-  display: block;
-
-  margin-bottom: 6px;
-
-  font-size: 10px;
-
-  color: #817b76;
-}
-
-.company-field select {
-  width: 100%;
-  min-height: 49px;
-
-  padding: 0 12px;
-
-  border:
-    1px solid
-    #ddd2ca;
-
-  border-radius: 14px;
-
-  outline: none;
-
-  background: #faf7f4;
-
-  font-family: inherit;
-
-  color: #17372f;
-}
-
-.company-field select:disabled {
-  opacity: 1;
-  cursor: default;
-}
-
-.company-help {
-  margin: 8px 2px 0;
-
-  font-size: 10px;
-
-  color: #a84f40;
-}
-
-.time-grid {
   display: grid;
+  place-items: center;
 
-  grid-template-columns:
-    1fr 1fr;
+  margin: 0 auto 10px;
 
-  gap: 11px;
+  border-radius: 50%;
+
+  background: #f2ece8;
+
+  color: #9b8174;
 }
 
-.time-grid label {
-  min-width: 0;
-}
-
-.time-grid label span {
+.empty-card strong {
   display: block;
-
-  margin-bottom: 6px;
-
-  font-size: 10px;
-
-  color: #817b76;
-}
-
-.time-grid input {
-  width: 100%;
-  min-height: 49px;
-
-  padding: 0 12px;
-
-  border:
-    1px solid
-    #ddd2ca;
-
-  border-radius: 14px;
-
-  outline: none;
-
-  background: #faf7f4;
-
-  font-family: inherit;
-
-  color: #17372f;
-}
-
-.pause-title {
-  margin:
-    20px
-    0
-    10px;
 
   font-size: 13px;
-  font-weight: 700;
+
+  color: #17372f;
 }
 
-.pause-title span {
-  margin-left: 5px;
+.empty-card p {
+  max-width: 280px;
 
-  font-size: 9px;
-  font-weight: 400;
+  margin:
+    5px auto 0;
 
-  color: #9b938d;
-}
-
-.worked-preview {
-  display: flex;
-
-  justify-content: space-between;
-  align-items: center;
-
-  margin-top: 20px;
-
-  padding: 14px 15px;
-
-  border-radius: 15px;
-
-  background: #f1e3dc;
-}
-
-.worked-preview span {
   font-size: 11px;
+  line-height: 1.5;
+
+  color: #8c8580;
 }
 
-.worked-preview strong {
-  font-size: 16px;
-}
-
-.save-button {
-  width: 100%;
-  min-height: 54px;
-
-  margin-top: 16px;
-
-  border: 0;
-  border-radius: 17px;
-
-  background: #c66b50;
-  color: #fff;
-
-  font-family: inherit;
-
-  font-size: 14px;
-  font-weight: 700;
-
-  cursor: pointer;
-}
-
-.save-button:disabled {
-  opacity: 0.6;
-
-  cursor: wait;
-}
+/* MESSAGES */
 
 .message {
-  margin:
-    14px
-    0
-    0;
+  margin: 12px 0 0;
 
   padding: 11px 13px;
 
-  border-radius: 12px;
+  border-radius: 13px;
 
   font-size: 11px;
 }
 
-.error {
-  background: #f9e7e3;
+.message.error {
+  background: #f8e8e3;
 
-  color: #a84f40;
+  color: #a24d3d;
 }
 
-.success {
-  background: #eaf2ed;
+.message.success {
+  background: #e7f0eb;
 
-  color: #305f4e;
-}
-/* ===== CORRECTION HORAIRES SUR MOBILE ===== */
-
-/* HORAIRES EN COLONNE - MÊME LARGEUR QUE SOCIÉTÉ */
-
-/* ===== CORRECTION DÉFINITIVE DES HORAIRES ===== */
-
-.hours-card {
-  width: 100%;
-  min-width: 0;
-  overflow: hidden;
+  color: #35614f;
 }
 
-.time-grid {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  gap: 16px !important;
-}
+/* MOBILE */
 
-.time-grid label {
-  display: block !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  overflow: hidden;
-}
+@media (max-width: 600px) {
+  .home-page {
+    padding:
+      24px
+      15px
+      110px;
+  }
 
-.time-grid input[type="time"] {
-  display: block !important;
+  .topbar h1 {
+    font-size: 27px;
+  }
 
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
+  .hero-card h2 {
+    font-size: 28px;
+  }
 
-  height: 49px !important;
+  .shift-card {
+    padding: 11px;
+  }
 
-  padding: 0 12px !important;
-  margin: 0 !important;
+  .punch-button {
+    min-width: 76px;
 
-  box-sizing: border-box !important;
+    padding:
+      0 10px;
 
-  border: 1px solid #ddd2ca;
-  border-radius: 14px;
-
-  background: #faf7f4;
-  color: #17372f;
-
-  font-family: inherit;
-
-  -webkit-appearance: none;
-  appearance: none;
+    font-size: 9px;
+  }
 }
 </style>

@@ -6,12 +6,12 @@
         <p class="eyebrow">Administration</p>
         <h1>Équipe</h1>
         <p class="subtitle">
-          Gérez les employés, leurs sociétés et leurs heures.
+          Gérez les employés et leurs affectations.
         </p>
       </div>
     </header>
 
-    <!-- ACTIONS -->
+    <!-- AJOUT EMPLOYÉ -->
     <section class="actions-section">
       <button
         type="button"
@@ -21,25 +21,19 @@
         <span class="action-plus">+</span>
         Ajouter un employé
       </button>
-
-      <button
-        type="button"
-        class="secondary-action"
-        @click="toggleAddHours"
-      >
-        <span class="action-plus">+</span>
-        Ajouter des heures
-      </button>
     </section>
 
-    <!-- AJOUT EMPLOYÉ -->
+    <!-- FORMULAIRE AJOUT -->
     <section
       v-if="showAddEmployee"
       class="form-card"
     >
       <div class="form-header">
         <div>
-          <p class="small-eyebrow">Nouvel employé</p>
+          <p class="small-eyebrow">
+            Nouvel employé
+          </p>
+
           <h2>Ajouter un employé</h2>
         </div>
 
@@ -84,41 +78,86 @@
         />
       </div>
 
+      <!-- AFFECTATIONS -->
       <div class="field">
-        <label>Taux horaire</label>
+        <label>Affectations</label>
 
-        <div class="rate-field">
-          <input
-            v-model="newHourlyRate"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0"
-          />
+        <p class="field-help">
+          Sélectionnez les postes auxquels cet employé
+          est autorisé.
+        </p>
 
-          <span>€ / heure</span>
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Sociétés</label>
-
-        <div class="companies-selector">
-          <label
-            v-for="company in companies"
-            :key="company.id"
-            class="company-option"
+        <div class="posts-selector">
+          <article
+            v-for="post in posts"
+            :key="post.id"
+            class="post-option"
+            :class="{
+              selected: newPostIds.includes(post.id)
+            }"
           >
-            <input
-              v-model="newCompanyIds"
-              type="checkbox"
-              :value="company.id"
-            />
+            <label class="post-main">
+              <input
+                v-model="newPostIds"
+                type="checkbox"
+                :value="post.id"
+              />
 
-            <span>
-              {{ company.name }}
-            </span>
-          </label>
+              <span class="custom-checkbox">
+                ✓
+              </span>
+
+              <div class="post-info">
+                <strong>
+                  {{ serviceLabel(post.service_type) }}
+                </strong>
+
+                <span>
+                  {{ post.site_name }}
+                </span>
+
+                <small v-if="post.service_type === 'security'">
+                  Midi 11h45 • Soir 18h45
+                </small>
+
+                <small v-else>
+                  1 vacation par jour
+                </small>
+              </div>
+
+              <div class="base-rate">
+                {{ formatMoney(post.base_rate) }}
+              </div>
+            </label>
+
+            <!-- TARIF PERSONNALISÉ -->
+            <div
+              v-if="newPostIds.includes(post.id)"
+              class="custom-rate-box"
+            >
+              <label>
+                Tarif personnalisé
+                <span>(optionnel)</span>
+              </label>
+
+              <div class="money-input">
+                <input
+                  v-model="newCustomRates[post.id]"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  :placeholder="String(post.base_rate)"
+                />
+
+                <span>€</span>
+              </div>
+
+              <small>
+                Laissez vide pour utiliser
+                {{ formatMoney(post.base_rate) }}.
+              </small>
+            </div>
+          </article>
         </div>
       </div>
 
@@ -148,170 +187,6 @@
             addingEmployee
               ? 'Ajout...'
               : 'Ajouter'
-          }}
-        </button>
-      </div>
-    </section>
-
-    <!-- AJOUT HEURES -->
-    <section
-      v-if="showAddHours"
-      class="form-card"
-    >
-      <div class="form-header">
-        <div>
-          <p class="small-eyebrow">Heures</p>
-          <h2>Ajouter des heures</h2>
-        </div>
-
-        <button
-          type="button"
-          class="close-button"
-          @click="closeAddHours"
-        >
-          ×
-        </button>
-      </div>
-
-      <div class="field">
-        <label>Employé</label>
-
-        <select
-          v-model="hoursEmployeeId"
-          @change="onHoursEmployeeChange"
-        >
-          <option value="">
-            Choisir un employé
-          </option>
-
-          <option
-            v-for="employee in employees"
-            :key="employee.id"
-            :value="employee.id"
-          >
-            {{ employee.first_name }}
-            {{ employee.last_name }}
-          </option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label>Société</label>
-
-        <select
-          v-model="hoursCompanyId"
-          :disabled="availableHourCompanies.length === 0"
-        >
-          <option value="">
-            Choisir une société
-          </option>
-
-          <option
-            v-for="company in availableHourCompanies"
-            :key="company.id"
-            :value="company.id"
-          >
-            {{ company.name }}
-          </option>
-        </select>
-
-        <span
-          v-if="
-            hoursEmployeeId &&
-            availableHourCompanies.length === 0
-          "
-          class="field-help"
-        >
-          Cet employé n'a encore aucune société attribuée.
-        </span>
-      </div>
-
-      <div class="field">
-        <label>Date</label>
-
-        <input
-          v-model="hoursDate"
-          type="date"
-        />
-      </div>
-
-      <div class="field-grid">
-        <div class="field">
-          <label>Début</label>
-
-          <input
-            v-model="hoursStart"
-            type="time"
-          />
-        </div>
-
-        <div class="field">
-          <label>Fin</label>
-
-          <input
-            v-model="hoursEnd"
-            type="time"
-          />
-        </div>
-      </div>
-
-      <div class="field-grid">
-        <div class="field">
-          <label>Début de pause</label>
-
-          <input
-            v-model="hoursPauseStart"
-            type="time"
-          />
-        </div>
-
-        <div class="field">
-          <label>Fin de pause</label>
-
-          <input
-            v-model="hoursPauseEnd"
-            type="time"
-          />
-        </div>
-      </div>
-
-      <div
-        v-if="workedMinutesPreview > 0"
-        class="worked-preview"
-      >
-        <span>Temps travaillé</span>
-
-        <strong>
-          {{ formatMinutes(workedMinutesPreview) }}
-        </strong>
-      </div>
-
-      <p
-        v-if="addHoursError"
-        class="error-message"
-      >
-        {{ addHoursError }}
-      </p>
-
-      <div class="form-actions">
-        <button
-          type="button"
-          class="cancel-button"
-          @click="closeAddHours"
-        >
-          Annuler
-        </button>
-
-        <button
-          type="button"
-          class="save-button"
-          :disabled="addingHours"
-          @click="addHours"
-        >
-          {{
-            addingHours
-              ? 'Ajout...'
-              : 'Ajouter les heures'
           }}
         </button>
       </div>
@@ -353,11 +228,10 @@
         <input
           v-model="searchQuery"
           type="search"
-          placeholder="Rechercher une employé..."
+          placeholder="Rechercher un employé..."
         />
       </div>
 
-      <!-- CHARGEMENT -->
       <div
         v-if="loading"
         class="empty-card"
@@ -365,19 +239,18 @@
         Chargement...
       </div>
 
-      <!-- VIDE -->
       <div
         v-else-if="filteredEmployees.length === 0"
         class="empty-card"
       >
         {{
           searchQuery
-            ? 'Aucun employé trouvée.'
+            ? 'Aucun employé trouvé.'
             : 'Aucun employé pour le moment.'
         }}
       </div>
 
-      <!-- CARTES -->
+      <!-- CARTES EMPLOYÉS -->
       <div
         v-else
         class="employee-list"
@@ -387,7 +260,7 @@
           :key="employee.id"
           class="employee-card"
         >
-          <!-- AFFICHAGE NORMAL -->
+          <!-- AFFICHAGE -->
           <template v-if="editingId !== employee.id">
             <div class="employee-main">
               <div class="avatar">
@@ -408,32 +281,52 @@
                   {{ employee.phone }}
                 </p>
 
-                <strong>
-                  {{
-                    Number(
-                      employee.hourly_rate || 0
-                    ).toFixed(2)
-                  }}
-                  € / h
-                </strong>
+                <span class="employee-status">
+                  Employé
+                </span>
               </div>
             </div>
 
-            <div class="company-list">
-              <span
-                v-for="company in employee.companies"
-                :key="company.id"
-                class="company-pill"
+            <!-- POSTES DE L'EMPLOYÉ -->
+            <div
+              v-if="employee.assignments.length > 0"
+              class="assignment-list"
+            >
+              <div
+                v-for="assignment in employee.assignments"
+                :key="assignment.post_id"
+                class="assignment-pill"
               >
-                {{ company.name }}
-              </span>
+                <div>
+                  <strong>
+                    {{
+                      serviceLabel(
+                        assignment.post.service_type
+                      )
+                    }}
+                  </strong>
 
-              <span
-                v-if="employee.companies.length === 0"
-                class="company-pill muted"
-              >
-                Aucune société
-              </span>
+                  <span>
+                    {{ assignment.post.site_name }}
+                  </span>
+                </div>
+
+                <b>
+                  {{
+                    formatMoney(
+                      assignment.custom_rate ??
+                      assignment.post.base_rate
+                    )
+                  }}
+                </b>
+              </div>
+            </div>
+
+            <div
+              v-else
+              class="no-assignment"
+            >
+              Aucune affectation
             </div>
 
             <div class="card-actions">
@@ -458,6 +351,17 @@
           <!-- MODIFICATION -->
           <template v-else>
             <div class="edit-form">
+              <div class="edit-title">
+                <p class="small-eyebrow">
+                  Modification
+                </p>
+
+                <h3>
+                  {{ employee.first_name }}
+                  {{ employee.last_name }}
+                </h3>
+              </div>
+
               <div class="field-grid">
                 <div class="field">
                   <label>Prénom</label>
@@ -488,39 +392,99 @@
               </div>
 
               <div class="field">
-                <label>Taux horaire</label>
+                <label>Affectations</label>
 
-                <div class="rate-field">
-                  <input
-                    v-model="editHourlyRate"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                  />
+                <p class="field-help">
+                  Cochez tous les postes autorisés
+                  pour cet employé.
+                </p>
 
-                  <span>€ / heure</span>
-                </div>
-              </div>
-
-              <div class="field">
-                <label>Sociétés</label>
-
-                <div class="companies-selector">
-                  <label
-                    v-for="company in companies"
-                    :key="company.id"
-                    class="company-option"
+                <div class="posts-selector">
+                  <article
+                    v-for="post in posts"
+                    :key="post.id"
+                    class="post-option"
+                    :class="{
+                      selected:
+                        editPostIds.includes(post.id)
+                    }"
                   >
-                    <input
-                      v-model="editCompanyIds"
-                      type="checkbox"
-                      :value="company.id"
-                    />
+                    <label class="post-main">
+                      <input
+                        v-model="editPostIds"
+                        type="checkbox"
+                        :value="post.id"
+                      />
 
-                    <span>
-                      {{ company.name }}
-                    </span>
-                  </label>
+                      <span class="custom-checkbox">
+                        ✓
+                      </span>
+
+                      <div class="post-info">
+                        <strong>
+                          {{
+                            serviceLabel(
+                              post.service_type
+                            )
+                          }}
+                        </strong>
+
+                        <span>
+                          {{ post.site_name }}
+                        </span>
+
+                        <small
+                          v-if="
+                            post.service_type ===
+                            'security'
+                          "
+                        >
+                          Midi 11h45 • Soir 18h45
+                        </small>
+
+                        <small v-else>
+                          1 vacation par jour
+                        </small>
+                      </div>
+
+                      <div class="base-rate">
+                        {{ formatMoney(post.base_rate) }}
+                      </div>
+                    </label>
+
+                    <div
+                      v-if="
+                        editPostIds.includes(post.id)
+                      "
+                      class="custom-rate-box"
+                    >
+                      <label>
+                        Tarif personnalisé
+                        <span>(optionnel)</span>
+                      </label>
+
+                      <div class="money-input">
+                        <input
+                          v-model="
+                            editCustomRates[post.id]
+                          "
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          :placeholder="
+                            String(post.base_rate)
+                          "
+                        />
+
+                        <span>€</span>
+                      </div>
+
+                      <small>
+                        Tarif normal :
+                        {{ formatMoney(post.base_rate) }}
+                      </small>
+                    </div>
+                  </article>
                 </div>
               </div>
 
@@ -559,23 +523,32 @@
       </div>
     </section>
 
-<AdminBottomNav />
+    <AdminBottomNav />
   </main>
 </template>
 
 <script setup lang="ts">
 import {
-  ref,
   computed,
   onMounted,
+  ref,
 } from 'vue'
 
 import AdminBottomNav from '../components/AdminBottomNav.vue'
 import { supabase } from '../lib/supabase'
 
-type Company = {
+type Post = {
   id: string
-  name: string
+  service_type: 'security' | 'cleaning'
+  site_name: string
+  base_rate: number
+  active: boolean
+}
+
+type Assignment = {
+  post_id: string
+  custom_rate: number | null
+  post: Post
 }
 
 type Employee = {
@@ -584,8 +557,7 @@ type Employee = {
   first_name: string
   last_name: string
   phone: string | null
-  hourly_rate: number
-  companies: Company[]
+  assignments: Assignment[]
 }
 
 /* =========================
@@ -593,7 +565,7 @@ type Employee = {
 ========================= */
 
 const employees = ref<Employee[]>([])
-const companies = ref<Company[]>([])
+const posts = ref<Post[]>([])
 
 const loading = ref(true)
 const saving = ref(false)
@@ -626,32 +598,64 @@ const filteredEmployees = computed(() => {
 })
 
 /* =========================
-   CHARGER SOCIÉTÉS
+   FORMAT
 ========================= */
 
-const loadCompanies = async () => {
+const serviceLabel = (
+  service: string
+) => {
+  if (service === 'security') {
+    return 'Sécurité'
+  }
+
+  return 'Ménage'
+}
+
+const formatMoney = (
+  value: number
+) => {
+  return `${Number(value).toFixed(2)} €`
+}
+
+/* =========================
+   CHARGER LES POSTES
+========================= */
+
+const loadPosts = async () => {
   const {
     data,
     error,
   } = await supabase
-    .from('companies')
-    .select('id, name')
-    .order('name')
+    .from('posts')
+    .select(`
+      id,
+      service_type,
+      site_name,
+      base_rate,
+      active
+    `)
+    .eq('active', true)
+    .order('site_name')
 
   if (error) {
     console.error(
-      'Erreur chargement sociétés :',
+      'Erreur chargement postes :',
       error
     )
 
     return
   }
 
-  companies.value = data ?? []
+  posts.value =
+    (data ?? []).map((post) => ({
+      ...post,
+      base_rate:
+        Number(post.base_rate ?? 0),
+    })) as Post[]
 }
 
 /* =========================
-   CHARGER EMPLOYÉES
+   CHARGER LES EMPLOYÉS
 ========================= */
 
 const loadEmployees = async () => {
@@ -667,30 +671,38 @@ const loadEmployees = async () => {
       auth_user_id,
       first_name,
       last_name,
-      phone,
-      hourly_rate
+      phone
     `)
     .order('first_name')
 
   if (employeeError) {
-    console.error(employeeError)
+    console.error(
+      'Erreur employés :',
+      employeeError
+    )
 
     loading.value = false
     return
   }
 
   const {
-    data: relations,
-    error: relationsError,
+    data: assignmentData,
+    error: assignmentError,
   } = await supabase
-    .from('employee_companies')
+    .from('employee_posts')
     .select(`
       employee_id,
-      company_id
+      post_id,
+      custom_rate,
+      active
     `)
+    .eq('active', true)
 
-  if (relationsError) {
-    console.error(relationsError)
+  if (assignmentError) {
+    console.error(
+      'Erreur affectations :',
+      assignmentError
+    )
 
     loading.value = false
     return
@@ -699,36 +711,59 @@ const loadEmployees = async () => {
   employees.value =
     (employeeData ?? []).map(
       (employee) => {
-        const companyIds =
-          (relations ?? [])
+        const employeeAssignments =
+          (assignmentData ?? [])
             .filter(
-              (relation) =>
-                relation.employee_id ===
+              (assignment) =>
+                assignment.employee_id ===
                 employee.id
             )
-            .map(
-              (relation) =>
-                relation.company_id
+            .map((assignment) => {
+              const post =
+                posts.value.find(
+                  (item) =>
+                    item.id ===
+                    assignment.post_id
+                )
+
+              if (!post) {
+                return null
+              }
+
+              return {
+                post_id:
+                  assignment.post_id,
+
+                custom_rate:
+                  assignment.custom_rate ===
+                  null
+                    ? null
+                    : Number(
+                        assignment.custom_rate
+                      ),
+
+                post,
+              }
+            })
+            .filter(
+              (
+                assignment
+              ): assignment is Assignment =>
+                assignment !== null
             )
 
-        const employeeCompanies =
-          companies.value.filter(
-            (company) =>
-              companyIds.includes(
-                company.id
-              )
-          )
-
         return {
-          ...employee,
-
-          hourly_rate:
-            Number(
-              employee.hourly_rate ?? 0
-            ),
-
-          companies:
-            employeeCompanies,
+          id: employee.id,
+          auth_user_id:
+            employee.auth_user_id,
+          first_name:
+            employee.first_name,
+          last_name:
+            employee.last_name,
+          phone:
+            employee.phone,
+          assignments:
+            employeeAssignments,
         }
       }
     )
@@ -745,10 +780,12 @@ const showAddEmployee = ref(false)
 const newFirstName = ref('')
 const newLastName = ref('')
 const newPhone = ref('')
-const newHourlyRate = ref<number | string>(0)
 
-const newCompanyIds =
+const newPostIds =
   ref<string[]>([])
+
+const newCustomRates =
+  ref<Record<string, string | number>>({})
 
 const addingEmployee = ref(false)
 const addEmployeeError = ref('')
@@ -756,8 +793,6 @@ const addEmployeeError = ref('')
 const toggleAddEmployee = () => {
   showAddEmployee.value =
     !showAddEmployee.value
-
-  showAddHours.value = false
 }
 
 const closeAddEmployee = () => {
@@ -766,10 +801,37 @@ const closeAddEmployee = () => {
   newFirstName.value = ''
   newLastName.value = ''
   newPhone.value = ''
-  newHourlyRate.value = 0
-  newCompanyIds.value = []
+
+  newPostIds.value = []
+  newCustomRates.value = {}
 
   addEmployeeError.value = ''
+}
+
+const getCustomRate = (
+  values: Record<string, string | number>,
+  postId: string
+): number | null => {
+  const value = values[postId]
+
+  if (
+    value === undefined ||
+    value === null ||
+    value === ''
+  ) {
+    return null
+  }
+
+  const numberValue = Number(value)
+
+  if (
+    Number.isNaN(numberValue) ||
+    numberValue < 0
+  ) {
+    return null
+  }
+
+  return numberValue
 }
 
 const addEmployee = async () => {
@@ -785,20 +847,22 @@ const addEmployee = async () => {
     return
   }
 
-  const rate =
-    Number(newHourlyRate.value)
-
-  if (
-    Number.isNaN(rate) ||
-    rate < 0
-  ) {
+  if (newPostIds.value.length === 0) {
     addEmployeeError.value =
-      'Le taux horaire est invalide.'
+      'Attribuez au moins un poste à cet employé.'
 
     return
   }
 
   addingEmployee.value = true
+
+  /*
+    hourly_rate reste temporairement à 0
+    uniquement parce que l'ancienne colonne
+    existe encore dans ta table employees.
+
+    Elle ne sera PLUS utilisée pour les calculs.
+  */
 
   const {
     data: employee,
@@ -813,15 +877,11 @@ const addEmployee = async () => {
         newLastName.value.trim(),
 
       phone:
-        newPhone.value.trim() ||
-        null,
+        newPhone.value.trim() || null,
 
-      hourly_rate:
-        rate,
+      hourly_rate: 0,
 
-      company_id:
-        newCompanyIds.value[0] ??
-        null,
+      company_id: null,
     })
     .select('id')
     .single()
@@ -839,29 +899,47 @@ const addEmployee = async () => {
     return
   }
 
-  if (
-    newCompanyIds.value.length > 0
-  ) {
-    const rows =
-      newCompanyIds.value.map(
-        (companyId) => ({
-          employee_id:
-            employee.id,
+  const assignments =
+    newPostIds.value.map(
+      (postId) => ({
+        employee_id: employee.id,
+        post_id: postId,
 
-          company_id:
-            companyId,
-        })
-      )
+        custom_rate:
+          getCustomRate(
+            newCustomRates.value,
+            postId
+          ),
 
-    const {
-      error: companyError,
-    } = await supabase
-      .from('employee_companies')
-      .insert(rows)
+        active: true,
+      })
+    )
 
-    if (companyError) {
-      console.error(companyError)
-    }
+  const {
+    error: assignmentError,
+  } = await supabase
+    .from('employee_posts')
+    .insert(assignments)
+
+  if (assignmentError) {
+    console.error(assignmentError)
+
+    /*
+      Si l'affectation échoue,
+      on supprime l'employé créé pour
+      éviter un salarié incomplet.
+    */
+
+    await supabase
+      .from('employees')
+      .delete()
+      .eq('id', employee.id)
+
+    addEmployeeError.value =
+      'Impossible d’enregistrer les affectations.'
+
+    addingEmployee.value = false
+    return
   }
 
   addingEmployee.value = false
@@ -872,27 +950,29 @@ const addEmployee = async () => {
 }
 
 /* =========================
-   MODIFICATION EMPLOYÉ
+   MODIFICATION
 ========================= */
 
-const editingId = ref<string | null>(null)
+const editingId =
+  ref<string | null>(null)
 
 const editFirstName = ref('')
 const editLastName = ref('')
 const editPhone = ref('')
 
-const editHourlyRate =
-  ref<number | string>(0)
-
-const editCompanyIds =
+const editPostIds =
   ref<string[]>([])
+
+const editCustomRates =
+  ref<Record<string, string | number>>({})
 
 const editError = ref('')
 
 const startEdit = (
   employee: Employee
 ) => {
-  editingId.value = employee.id
+  editingId.value =
+    employee.id
 
   editFirstName.value =
     employee.first_name
@@ -903,13 +983,27 @@ const startEdit = (
   editPhone.value =
     employee.phone ?? ''
 
-  editHourlyRate.value =
-    employee.hourly_rate
-
-  editCompanyIds.value =
-    employee.companies.map(
-      (company) => company.id
+  editPostIds.value =
+    employee.assignments.map(
+      (assignment) =>
+        assignment.post_id
     )
+
+  const rates:
+    Record<string, string | number> = {}
+
+  employee.assignments.forEach(
+    (assignment) => {
+      if (
+        assignment.custom_rate !== null
+      ) {
+        rates[assignment.post_id] =
+          assignment.custom_rate
+      }
+    }
+  )
+
+  editCustomRates.value = rates
 
   editError.value = ''
 }
@@ -920,8 +1014,9 @@ const cancelEdit = () => {
   editFirstName.value = ''
   editLastName.value = ''
   editPhone.value = ''
-  editHourlyRate.value = 0
-  editCompanyIds.value = []
+
+  editPostIds.value = []
+  editCustomRates.value = {}
 
   editError.value = ''
 }
@@ -941,15 +1036,9 @@ const saveEmployee = async (
     return
   }
 
-  const hourlyRate =
-    Number(editHourlyRate.value)
-
-  if (
-    Number.isNaN(hourlyRate) ||
-    hourlyRate < 0
-  ) {
+  if (editPostIds.value.length === 0) {
     editError.value =
-      'Le taux horaire est invalide.'
+      'Attribuez au moins un poste à cet employé.'
 
     return
   }
@@ -968,15 +1057,7 @@ const saveEmployee = async (
         editLastName.value.trim(),
 
       phone:
-        editPhone.value.trim() ||
-        null,
-
-      hourly_rate:
-        hourlyRate,
-
-      company_id:
-        editCompanyIds.value[0] ??
-        null,
+        editPhone.value.trim() || null,
     })
     .eq('id', employeeId)
 
@@ -990,55 +1071,58 @@ const saveEmployee = async (
     return
   }
 
+  /*
+    On supprime les anciennes affectations
+    puis on recrée celles cochées.
+  */
+
   const {
     error: deleteError,
   } = await supabase
-    .from('employee_companies')
+    .from('employee_posts')
     .delete()
-    .eq(
-      'employee_id',
-      employeeId
-    )
+    .eq('employee_id', employeeId)
 
   if (deleteError) {
     console.error(deleteError)
 
     editError.value =
-      'Impossible de modifier les sociétés.'
+      'Impossible de modifier les affectations.'
 
     saving.value = false
     return
   }
 
-  if (
-    editCompanyIds.value.length > 0
-  ) {
-    const rows =
-      editCompanyIds.value.map(
-        (companyId) => ({
-          employee_id:
-            employeeId,
+  const assignments =
+    editPostIds.value.map(
+      (postId) => ({
+        employee_id: employeeId,
+        post_id: postId,
 
-          company_id:
-            companyId,
-        })
-      )
+        custom_rate:
+          getCustomRate(
+            editCustomRates.value,
+            postId
+          ),
 
-    const {
-      error: insertError,
-    } = await supabase
-      .from('employee_companies')
-      .insert(rows)
+        active: true,
+      })
+    )
 
-    if (insertError) {
-      console.error(insertError)
+  const {
+    error: insertError,
+  } = await supabase
+    .from('employee_posts')
+    .insert(assignments)
 
-      editError.value =
-        'Impossible d’enregistrer les sociétés.'
+  if (insertError) {
+    console.error(insertError)
 
-      saving.value = false
-      return
-    }
+    editError.value =
+      'Impossible d’enregistrer les affectations.'
+
+    saving.value = false
+    return
   }
 
   saving.value = false
@@ -1091,254 +1175,11 @@ const deleteEmployee = async (
 }
 
 /* =========================
-   AJOUT HEURES
-========================= */
-
-const showAddHours = ref(false)
-
-const hoursEmployeeId = ref('')
-const hoursCompanyId = ref('')
-const hoursDate = ref('')
-
-const hoursStart = ref('')
-const hoursEnd = ref('')
-
-const hoursPauseStart = ref('')
-const hoursPauseEnd = ref('')
-
-const addingHours = ref(false)
-const addHoursError = ref('')
-
-const availableHourCompanies =
-  computed(() => {
-    const employee =
-      employees.value.find(
-        (item) =>
-          item.id ===
-          hoursEmployeeId.value
-      )
-
-    return employee?.companies ?? []
-  })
-
-const toggleAddHours = () => {
-  showAddHours.value =
-    !showAddHours.value
-
-  showAddEmployee.value = false
-}
-
-const closeAddHours = () => {
-  showAddHours.value = false
-
-  hoursEmployeeId.value = ''
-  hoursCompanyId.value = ''
-  hoursDate.value = ''
-
-  hoursStart.value = ''
-  hoursEnd.value = ''
-
-  hoursPauseStart.value = ''
-  hoursPauseEnd.value = ''
-
-  addHoursError.value = ''
-}
-
-const onHoursEmployeeChange = () => {
-  hoursCompanyId.value = ''
-
-  if (
-    availableHourCompanies.value.length === 1
-  ) {
-    hoursCompanyId.value =
-      availableHourCompanies.value[0].id
-  }
-}
-
-const timeToMinutes = (
-  time: string
-) => {
-  if (!time) return 0
-
-  const [hours, minutes] =
-    time.split(':').map(Number)
-
-  return (
-    hours * 60 +
-    minutes
-  )
-}
-
-const workedMinutesPreview =
-  computed(() => {
-    if (
-      !hoursStart.value ||
-      !hoursEnd.value
-    ) {
-      return 0
-    }
-
-    const start =
-      timeToMinutes(
-        hoursStart.value
-      )
-
-    const end =
-      timeToMinutes(
-        hoursEnd.value
-      )
-
-    let total =
-      end - start
-
-    if (
-      hoursPauseStart.value &&
-      hoursPauseEnd.value
-    ) {
-      const pauseStart =
-        timeToMinutes(
-          hoursPauseStart.value
-        )
-
-      const pauseEnd =
-        timeToMinutes(
-          hoursPauseEnd.value
-        )
-
-      total -=
-        pauseEnd - pauseStart
-    }
-
-    return Math.max(
-      total,
-      0
-    )
-  })
-
-const formatMinutes = (
-  minutes: number
-) => {
-  const hours =
-    Math.floor(
-      minutes / 60
-    )
-
-  const remaining =
-    minutes % 60
-
-  if (remaining === 0) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${remaining
-    .toString()
-    .padStart(2, '0')}`
-}
-
-const addHours = async () => {
-  addHoursError.value = ''
-
-  if (
-    !hoursEmployeeId.value ||
-    !hoursCompanyId.value ||
-    !hoursDate.value ||
-    !hoursStart.value ||
-    !hoursEnd.value
-  ) {
-    addHoursError.value =
-      'Remplissez les informations obligatoires.'
-
-    return
-  }
-
-  if (
-    hoursPauseStart.value &&
-    !hoursPauseEnd.value
-  ) {
-    addHoursError.value =
-      'Indiquez la fin de la pause.'
-
-    return
-  }
-
-  if (
-    !hoursPauseStart.value &&
-    hoursPauseEnd.value
-  ) {
-    addHoursError.value =
-      'Indiquez le début de la pause.'
-
-    return
-  }
-
-  if (
-    workedMinutesPreview.value <= 0
-  ) {
-    addHoursError.value =
-      'Les horaires sont invalides.'
-
-    return
-  }
-
-  addingHours.value = true
-
-  const {
-    error,
-  } = await supabase
-    .from('employee_time_entries')
-    .insert({
-      employee_id:
-        hoursEmployeeId.value,
-
-      company_id:
-        hoursCompanyId.value,
-
-      work_date:
-        hoursDate.value,
-
-      start_time:
-        hoursStart.value,
-
-      pause_start:
-        hoursPauseStart.value ||
-        null,
-
-      pause_end:
-        hoursPauseEnd.value ||
-        null,
-
-      end_time:
-        hoursEnd.value,
-
-      worked_minutes:
-        workedMinutesPreview.value,
-    })
-
-  if (error) {
-    console.error(error)
-
-    addHoursError.value =
-      'Impossible d’ajouter les heures.'
-
-    addingHours.value = false
-    return
-  }
-
-  addingHours.value = false
-
-  closeAddHours()
-
-  window.alert(
-    'Les heures ont bien été ajoutées.'
-  )
-}
-
-/* =========================
    CHARGEMENT
 ========================= */
 
 onMounted(async () => {
-  await loadCompanies()
+  await loadPosts()
   await loadEmployees()
 })
 </script>
@@ -1348,19 +1189,16 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
+.profile-page,
 .admin-page {
   min-height: 100vh;
-
-  padding:
-    28px 20px
-    120px;
-
-  background: #f7f1ec;
-
-  color: #17372f;
 }
 
-/* LARGEUR */
+.admin-page {
+  padding: 28px 20px 120px;
+  background: #f7f1ec;
+  color: #17372f;
+}
 
 .topbar,
 .actions-section,
@@ -1368,12 +1206,9 @@ onMounted(async () => {
 .team-section {
   width: 100%;
   max-width: 520px;
-
   margin-left: auto;
   margin-right: auto;
 }
-
-/* HEADER */
 
 .topbar {
   margin-bottom: 22px;
@@ -1382,55 +1217,43 @@ onMounted(async () => {
 .eyebrow,
 .small-eyebrow {
   margin: 0 0 4px;
-
   font-size: 11px;
   font-weight: 700;
-
   text-transform: uppercase;
   letter-spacing: 1.2px;
-
   color: #9b8174;
 }
 
 .topbar h1 {
   margin: 0;
-
   font-size: 30px;
-
   color: #17372f;
 }
 
 .subtitle {
   margin: 6px 0 0;
-
   font-size: 13px;
-
   color: #7d7874;
 }
 
-/* BOUTONS DU HAUT */
-
 .actions-section {
-  display: grid;
-  grid-template-columns:
-    repeat(2, 1fr);
-
-  gap: 12px;
-
   margin-bottom: 24px;
 }
 
-.primary-action,
-.secondary-action {
+.primary-action {
+  width: 100%;
   min-height: 54px;
 
   display: flex;
   align-items: center;
   justify-content: center;
-
   gap: 8px;
 
+  border: none;
   border-radius: 17px;
+
+  background: #17372f;
+  color: white;
 
   font: inherit;
   font-size: 13px;
@@ -1439,37 +1262,16 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-.primary-action {
-  border: none;
-
-  background: #17372f;
-  color: white;
-}
-
-.secondary-action {
-  border:
-    1px solid #ddc2b6;
-
-  background: #f6e9e3;
-
-  color: #a24d3d;
-}
-
 .action-plus {
   font-size: 23px;
   font-weight: 400;
 }
 
-/* FORMULAIRES */
-
 .form-card {
   margin-bottom: 24px;
-
   padding: 22px;
 
-  border:
-    1px solid #eadfd8;
-
+  border: 1px solid #eadfd8;
   border-radius: 24px;
 
   background: white;
@@ -1481,23 +1283,18 @@ onMounted(async () => {
   justify-content: space-between;
 
   gap: 20px;
-
   margin-bottom: 20px;
 }
 
 .form-header h2 {
   margin: 0;
-
   font-size: 21px;
-
   color: #17372f;
 }
 
 .close-button {
   width: 36px;
   height: 36px;
-
-  flex-shrink: 0;
 
   display: grid;
   place-items: center;
@@ -1508,7 +1305,6 @@ onMounted(async () => {
   border-radius: 50%;
 
   background: #f4efec;
-
   color: #746d69;
 
   font-size: 22px;
@@ -1516,13 +1312,9 @@ onMounted(async () => {
   cursor: pointer;
 }
 
-/* CHAMPS */
-
 .field-grid {
   display: grid;
-  grid-template-columns:
-    repeat(2, 1fr);
-
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 }
 
@@ -1531,43 +1323,35 @@ onMounted(async () => {
   flex-direction: column;
 
   gap: 7px;
-
   margin-bottom: 15px;
 }
 
-.field label {
+.field > label {
   font-size: 11px;
   font-weight: 700;
-
   color: #52605b;
 }
 
-.field input,
-.field select {
+.field input {
   width: 100%;
   min-height: 48px;
 
   padding: 0 14px;
 
-  border:
-    1px solid #e3d9d3;
-
+  border: 1px solid #e3d9d3;
   border-radius: 14px;
 
   outline: none;
 
   background: #fbf8f6;
-
   color: #17372f;
 
   font: inherit;
   font-size: 13px;
 }
 
-.field input:focus,
-.field select:focus {
+.field input:focus {
   border-color: #9bafa7;
-
   background: white;
 
   box-shadow:
@@ -1576,125 +1360,183 @@ onMounted(async () => {
 }
 
 .field-help {
+  margin: -2px 0 8px;
   font-size: 11px;
-
-  color: #9a7970;
+  line-height: 1.5;
+  color: #9a918b;
 }
 
-/* TAUX */
+/* POSTES */
 
-.rate-field {
-  position: relative;
-}
-
-.rate-field input {
-  padding-right: 90px;
-}
-
-.rate-field span {
-  position: absolute;
-
-  top: 50%;
-  right: 14px;
-
-  transform:
-    translateY(-50%);
-
-  font-size: 11px;
-
-  color: #8b8581;
-}
-
-/* SOCIÉTÉS */
-
-.companies-selector {
+.posts-selector {
   display: flex;
-  flex-wrap: wrap;
-
-  gap: 8px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.company-option {
-  position: relative;
+.post-option {
+  overflow: hidden;
 
-  display: inline-flex;
+  border: 1px solid #e4dad4;
+  border-radius: 18px;
+
+  background: #fbf8f6;
+
+  transition: 0.2s ease;
+}
+
+.post-option.selected {
+  border-color: #17372f;
+  background: #f4f7f5;
+}
+
+.post-main {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  padding: 14px;
 
   cursor: pointer;
 }
 
-.company-option input {
+.post-main > input {
   position: absolute;
-
   opacity: 0;
-
   pointer-events: none;
 }
 
-.company-option span {
-  min-height: 36px;
+.custom-checkbox {
+  width: 24px;
+  height: 24px;
 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  flex-shrink: 0;
 
-  padding:
-    0 12px;
+  display: grid;
+  place-items: center;
 
-  border:
-    1px solid #e1d7d1;
+  border: 1px solid #d8cdc7;
+  border-radius: 8px;
 
-  border-radius: 999px;
+  background: white;
+  color: transparent;
 
-  background: #fbf8f6;
-
-  font-size: 11px;
-  font-weight: 600;
-
-  color: #706a66;
+  font-size: 13px;
+  font-weight: 800;
 }
 
-.company-option input:checked + span {
+.post-option.selected .custom-checkbox {
   border-color: #17372f;
-
   background: #17372f;
-
   color: white;
 }
 
-/* TEMPS TRAVAILLÉ */
+.post-info {
+  min-width: 0;
+  flex: 1;
 
-.worked-preview {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
 
-  margin-bottom: 15px;
-
-  padding: 14px 16px;
-
-  border-radius: 15px;
-
-  background: #eef2ef;
+  gap: 2px;
 }
 
-.worked-preview span {
-  font-size: 12px;
-
-  color: #75807c;
+.post-info strong {
+  font-size: 13px;
+  color: #17372f;
 }
 
-.worked-preview strong {
-  font-size: 14px;
+.post-info span {
+  font-size: 11px;
+  color: #756f6b;
+}
+
+.post-info small {
+  margin-top: 2px;
+
+  font-size: 10px;
+  color: #a05e4c;
+}
+
+.base-rate {
+  flex-shrink: 0;
+
+  padding: 6px 9px;
+
+  border-radius: 10px;
+
+  background: #efe6df;
+
+  font-size: 11px;
+  font-weight: 800;
 
   color: #17372f;
 }
 
-/* ACTION FORMULAIRE */
+/* TARIF PERSONNALISÉ */
+
+.custom-rate-box {
+  padding: 12px 14px 14px;
+
+  border-top: 1px solid #e4dad4;
+
+  background: white;
+}
+
+.custom-rate-box > label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-size: 10px;
+  font-weight: 700;
+
+  color: #52605b;
+}
+
+.custom-rate-box > label span {
+  font-weight: 400;
+  color: #9a918b;
+}
+
+.money-input {
+  position: relative;
+}
+
+.money-input input {
+  min-height: 42px;
+  padding-right: 40px;
+}
+
+.money-input span {
+  position: absolute;
+
+  right: 14px;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  font-size: 12px;
+  font-weight: 700;
+
+  color: #8b8581;
+}
+
+.custom-rate-box small {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 10px;
+  color: #9a918b;
+}
+
+/* BOUTONS */
 
 .form-actions,
 .edit-actions {
   display: flex;
-
   gap: 10px;
 }
 
@@ -1702,8 +1544,7 @@ onMounted(async () => {
 .save-button {
   min-height: 45px;
 
-  padding:
-    0 18px;
+  padding: 0 18px;
 
   border-radius: 14px;
 
@@ -1717,11 +1558,9 @@ onMounted(async () => {
 .cancel-button {
   flex: 1;
 
-  border:
-    1px solid #ddd4ce;
+  border: 1px solid #ddd4ce;
 
   background: white;
-
   color: #69625e;
 }
 
@@ -1731,38 +1570,32 @@ onMounted(async () => {
   border: none;
 
   background: #17372f;
-
   color: white;
 }
 
 .save-button:disabled {
   opacity: 0.55;
-
   cursor: not-allowed;
 }
 
 .error-message {
-  margin:
-    0 0 15px;
+  margin: 0 0 15px;
 
-  padding:
-    11px 13px;
+  padding: 11px 13px;
 
   border-radius: 13px;
 
   background: #f8e8e3;
 
   font-size: 12px;
-
   color: #a24d3d;
 }
 
-/* SECTION ÉQUIPE */
+/* ÉQUIPE */
 
 .team-section {
   display: flex;
   flex-direction: column;
-
   gap: 15px;
 }
 
@@ -1775,8 +1608,7 @@ onMounted(async () => {
 }
 
 .section-head p {
-  margin:
-    4px 0 0;
+  margin: 4px 0 0;
 
   font-size: 12px;
 
@@ -1812,19 +1644,14 @@ onMounted(async () => {
   width: 100%;
   min-height: 50px;
 
-  padding:
-    0 16px
-    0 45px;
+  padding: 0 16px 0 45px;
 
-  border:
-    1px solid #e4d9d3;
-
+  border: 1px solid #e4d9d3;
   border-radius: 17px;
 
   outline: none;
 
   background: white;
-
   color: #17372f;
 
   font: inherit;
@@ -1839,15 +1666,11 @@ onMounted(async () => {
     rgba(23, 55, 47, 0.06);
 }
 
-/* LISTE CARTES */
-
 .employee-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
-/* CARTE */
 
 .employee-card {
   min-width: 0;
@@ -1857,9 +1680,7 @@ onMounted(async () => {
 
   padding: 20px 18px;
 
-  border:
-    1px solid #eadfd8;
-
+  border: 1px solid #eadfd8;
   border-radius: 24px;
 
   background: white;
@@ -1872,7 +1693,6 @@ onMounted(async () => {
 .employee-main {
   display: flex;
   align-items: center;
-
   gap: 13px;
 }
 
@@ -1888,7 +1708,6 @@ onMounted(async () => {
   border-radius: 50%;
 
   background: #17372f;
-
   color: white;
 
   font-size: 17px;
@@ -1911,54 +1730,89 @@ onMounted(async () => {
 }
 
 .employee-info p {
-  margin:
-    4px 0 0;
+  margin: 4px 0 0;
 
   font-size: 11px;
 
   color: #8b8581;
 }
 
-.employee-info strong {
+.employee-status {
   margin-top: 4px;
-
-  font-size: 13px;
-
-  color: #a85f49;
-}
-
-/* PASTILLES */
-
-.company-list {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 7px;
-
-  margin-top: 15px;
-}
-
-.company-pill {
-  padding:
-    6px 10px;
-
-  border-radius: 999px;
-
-  background: #efe6df;
 
   font-size: 10px;
   font-weight: 700;
 
+  color: #a85f49;
+}
+
+/* AFFECTATIONS */
+
+.assignment-list {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+
+  margin-top: 16px;
+}
+
+.assignment-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px 12px;
+
+  border-radius: 14px;
+
+  background: #f5f0ec;
+}
+
+.assignment-pill div {
+  display: flex;
+  flex-direction: column;
+
+  gap: 2px;
+}
+
+.assignment-pill strong {
+  font-size: 11px;
+
   color: #17372f;
 }
 
-.company-pill.muted {
+.assignment-pill span {
+  font-size: 10px;
+
+  color: #8b8581;
+}
+
+.assignment-pill b {
+  flex-shrink: 0;
+
+  font-size: 12px;
+
+  color: #a85f49;
+}
+
+.no-assignment {
+  margin-top: 15px;
+
+  padding: 10px 12px;
+
+  border-radius: 12px;
+
   background: #f2efed;
+
+  font-size: 11px;
 
   color: #99918c;
 }
 
-/* BOUTONS CARTE */
+/* ACTIONS CARTE */
 
 .card-actions {
   display: flex;
@@ -1972,8 +1826,7 @@ onMounted(async () => {
 .delete-button {
   min-height: 42px;
 
-  padding:
-    0 14px;
+  padding: 0 14px;
 
   border-radius: 14px;
 
@@ -1990,40 +1843,41 @@ onMounted(async () => {
   border: none;
 
   background: #17372f;
-
   color: white;
 }
 
 .delete-button {
   flex: 1;
 
-  border:
-    1px solid #e3c9bf;
+  border: 1px solid #e3c9bf;
 
   background: #f8ebe6;
-
   color: #a24d3d;
 }
-
-/* MODIFICATION */
 
 .edit-form {
   width: 100%;
 
   display: flex;
   flex-direction: column;
-
-  gap: 2px;
 }
 
-/* VIDE */
+.edit-title {
+  margin-bottom: 18px;
+}
+
+.edit-title h3 {
+  margin: 0;
+
+  font-size: 18px;
+
+  color: #17372f;
+}
 
 .empty-card {
   padding: 30px;
 
-  border:
-    1px solid #eadfd8;
-
+  border: 1px solid #eadfd8;
   border-radius: 22px;
 
   background: white;
@@ -2035,9 +1889,7 @@ onMounted(async () => {
   color: #8b8581;
 }
 
-/* NAV BAS */
-
-/* TELEPHONE */
+/* MOBILE */
 
 @media (max-width: 600px) {
   .admin-page {
@@ -2046,34 +1898,16 @@ onMounted(async () => {
       115px;
   }
 
-  .actions-section {
-    grid-template-columns: 1fr;
-  }
-
   .field-grid {
     grid-template-columns: 1fr;
   }
 
-  /*
-    IMPORTANT :
-    SUR TÉLÉPHONE LES CARTES
-    SONT UNE SOUS L'AUTRE.
-  */
   .employee-list {
-    display: flex;
-    flex-direction: column;
-
-    gap: 14px;
-
     width: 100%;
-
-    overflow: visible;
   }
 
   .employee-card {
     width: 100%;
-
-    flex-shrink: 0;
   }
 
   .card-actions {
@@ -2083,6 +1917,14 @@ onMounted(async () => {
   .edit-button,
   .delete-button {
     width: 100%;
+  }
+
+  .post-main {
+    align-items: flex-start;
+  }
+
+  .base-rate {
+    margin-top: 1px;
   }
 }
 </style>

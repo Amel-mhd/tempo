@@ -1,11 +1,15 @@
 <template>
   <main class="month-page">
-    <!-- HEADER -->
 
+    <!-- HEADER -->
     <header class="topbar">
       <div>
-        <p class="eyebrow">Mon activité</p>
+        <p class="eyebrow">
+          Mon activité
+        </p>
+
         <h1>Mon mois</h1>
+
         <p class="subtitle">
           {{ monthTitle }}
         </p>
@@ -13,23 +17,31 @@
     </header>
 
     <!-- RÉSUMÉ -->
-
     <section class="summary-card">
+
       <div>
-        <span>Heures travaillées</span>
-        <strong>{{ totalWorked }}</strong>
+        <span>Vacations</span>
+
+        <strong>
+          {{ validMonthPunches.length }}
+        </strong>
       </div>
 
       <div>
-        <span>Estimation</span>
-        <strong>{{ estimatedSalary }} €</strong>
+        <span>Montant</span>
+
+        <strong>
+          {{ formatMoney(totalAmount) }}
+        </strong>
       </div>
+
     </section>
 
     <!-- CALENDRIER -->
-
     <section class="calendar-card">
+
       <div class="calendar-header">
+
         <button
           type="button"
           class="month-button"
@@ -38,7 +50,9 @@
           ‹
         </button>
 
-        <h2>{{ monthTitle }}</h2>
+        <h2>
+          {{ monthTitle }}
+        </h2>
 
         <button
           type="button"
@@ -47,8 +61,10 @@
         >
           ›
         </button>
+
       </div>
 
+      <!-- JOURS SEMAINE -->
       <div class="weekdays">
         <span>Lun</span>
         <span>Mar</span>
@@ -59,405 +75,699 @@
         <span>Dim</span>
       </div>
 
+      <!-- CALENDRIER -->
       <div class="calendar-grid">
+
         <div
           v-for="day in calendarDays"
           :key="day.key"
           class="day"
           :class="{
-            empty: day.day === null,
-            worked: day.entry,
-            selected: selectedDate === day.date,
+            empty:
+              day.day === null,
+
+            worked:
+              day.punches.length > 0,
+
+            selected:
+              selectedDate === day.date
           }"
           @click="selectDay(day)"
         >
-          <template v-if="day.day !== null">
-            <span>{{ day.day }}</span>
 
-            <small v-if="day.entry">
-              {{ formatShortTime(day.entry.workedMinutes) }}
+          <template
+            v-if="day.day !== null"
+          >
+
+            <span>
+              {{ day.day }}
+            </span>
+
+            <small
+              v-if="
+                day.punches.length > 0
+              "
+            >
+              {{
+                day.punches.length
+              }}
+              vac.
             </small>
 
-            <i v-if="day.entry"></i>
+            <i
+              v-if="
+                day.punches.length > 0
+              "
+            ></i>
+
           </template>
+
         </div>
+
       </div>
+
     </section>
 
     <!-- JOUR SÉLECTIONNÉ -->
-
     <section
-      v-if="selectedEntry"
+      v-if="
+        selectedDate &&
+        selectedDayPunches.length > 0
+      "
       class="selected-card"
     >
+
       <div class="selected-header">
+
         <div>
-          <p class="eyebrow">Détail</p>
-          <h2>{{ formatDate(selectedEntry.date) }}</h2>
+          <p class="eyebrow">
+            Détail
+          </p>
+
+          <h2>
+            {{ formatDate(selectedDate) }}
+          </h2>
         </div>
 
-        <strong>
-          {{ formatWorkedTime(selectedEntry.workedMinutes) }}
-        </strong>
+        <div class="selected-total">
+          <span>
+            {{
+              selectedValidPunches.length
+            }}
+            {{
+              selectedValidPunches.length > 1
+                ? 'vacations'
+                : 'vacation'
+            }}
+          </span>
+
+          <strong>
+            {{
+              formatMoney(
+                selectedDayAmount
+              )
+            }}
+          </strong>
+        </div>
+
       </div>
 
-      <div class="timeline">
-        <div>
-          <span>Arrivée</span>
-          <strong>{{ selectedEntry.startTime }}</strong>
-        </div>
+      <!-- VACATIONS DU JOUR -->
+      <div class="day-vacations">
+
+        <article
+          v-for="
+            punch in selectedDayPunches
+          "
+          :key="punch.id"
+          class="vacation-row"
+          :class="{
+            contested:
+              punch.status ===
+              'contested'
+          }"
+        >
+
+          <div class="vacation-main">
+
+            <div
+              class="vacation-icon"
+            >
+              {{
+                vacationIcon(
+                  punch.vacation_type
+                )
+              }}
+            </div>
+
+            <div>
+              <strong>
+                {{
+                  vacationLabel(
+                    punch.vacation_type
+                  )
+                }}
+              </strong>
+
+              <span>
+                {{
+                  serviceLabel(
+                    punch.post.service_type
+                  )
+                }}
+                •
+                {{ punch.post.site_name }}
+              </span>
+            </div>
+
+          </div>
+
+          <div class="vacation-rate">
+
+            <strong
+              :class="{
+                crossed:
+                  punch.status ===
+                  'contested'
+              }"
+            >
+              {{
+                formatMoney(
+                  punch.applied_rate
+                )
+              }}
+            </strong>
+
+            <span
+              class="status"
+              :class="punch.status"
+            >
+              {{
+                getStatusLabel(
+                  punch.status
+                )
+              }}
+            </span>
+
+          </div>
+
+          <!-- HEURES -->
+          <div class="times">
+
+            <div
+              v-if="
+                punch.scheduled_time
+              "
+            >
+              <span>Prévu</span>
+
+              <strong>
+                {{
+                  formatScheduledTime(
+                    punch.scheduled_time
+                  )
+                }}
+              </strong>
+            </div>
+
+            <div>
+              <span>Pointé</span>
+
+              <strong>
+                {{
+                  formatPunchTime(
+                    punch.punched_at
+                  )
+                }}
+              </strong>
+            </div>
+
+          </div>
+
+          <p
+            v-if="
+              punch.status ===
+              'contested'
+            "
+            class="contest-message"
+          >
+            Cette vacation n'est pas
+            comptabilisée.
+          </p>
+
+          <p
+            v-else-if="
+              punch.status ===
+              'suspicious'
+            "
+            class="warning-message"
+          >
+            Pointage à vérifier.
+          </p>
+
+        </article>
+
+      </div>
+
+    </section>
+
+    <!-- RÉCAP -->
+    <section class="recap-card">
+
+      <div class="recap-header">
 
         <div>
-          <span>Pause</span>
+          <p class="eyebrow">
+            Récapitulatif
+          </p>
+
+          <h2>
+            {{ monthTitle }}
+          </h2>
+        </div>
+
+        <span class="days-count">
+          {{ workedDays }}
+
+          {{
+            workedDays > 1
+              ? 'jours'
+              : 'jour'
+          }}
+        </span>
+
+      </div>
+
+      <div
+        v-if="
+          monthPunches.length > 0
+        "
+        class="stats"
+      >
+
+        <div>
+          <span>
+            Vacations
+          </span>
+
           <strong>
-            {{ selectedEntry.pauseStart }}
-            –
-            {{ selectedEntry.pauseEnd }}
+            {{
+              validMonthPunches.length
+            }}
           </strong>
         </div>
 
         <div>
-          <span>Départ</span>
-          <strong>{{ selectedEntry.endTime }}</strong>
-        </div>
-      </div>
-    </section>
+          <span>
+            Total
+          </span>
 
-    <!-- RÉCAP -->
-
-    <section class="recap-card">
-      <div class="recap-header">
-        <div>
-          <p class="eyebrow">Récapitulatif</p>
-          <h2>Ce mois-ci</h2>
+          <strong>
+            {{
+              formatMoney(
+                totalAmount
+              )
+            }}
+          </strong>
         </div>
 
-        <span class="days-count">
-          {{ monthEntries.length }}
-          {{ monthEntries.length > 1 ? 'jours' : 'jour' }}
-        </span>
       </div>
 
-      <div v-if="monthEntries.length" class="stats">
-        <div>
-          <span>Total</span>
-          <strong>{{ totalWorked }}</strong>
-        </div>
-
-        <div>
-          <span>Moyenne / jour</span>
-          <strong>{{ averagePerDay }}</strong>
-        </div>
-      </div>
-
-      <div v-else class="empty-month">
+      <div
+        v-else
+        class="empty-month"
+      >
         <span>◷</span>
 
         <p>
-          Aucune journée enregistrée pour ce mois.
+          Aucune vacation enregistrée
+          pour ce mois.
         </p>
       </div>
+
     </section>
 
-    <!-- NAVIGATION -->
+    <EmployeeBottomNav />
 
-   <EmployeeBottomNav />
   </main>
 </template>
 
 <script setup lang="ts">
 import {
   computed,
-  ref,
   onMounted,
+  ref,
+  watch,
 } from 'vue'
 
 import {
-  getTimeEntries,
-  type TimeEntry,
-} from '../services/timeEntries'
+  useRouter,
+} from 'vue-router'
 
-import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
-import { supabase } from '../lib/supabase'
+import EmployeeBottomNav
+  from '../components/EmployeeBottomNav.vue'
+
+import {
+  supabase,
+} from '../lib/supabase'
+
+type ServiceType =
+  | 'security'
+  | 'cleaning'
+
+type VacationType =
+  | 'midi'
+  | 'soir'
+  | 'jour'
+
+type PunchStatus =
+  | 'validated'
+  | 'suspicious'
+  | 'contested'
+
+interface Post {
+  id: string
+
+  service_type:
+    ServiceType
+
+  site_name: string
+}
+
+interface Punch {
+  id: string
+
+  employee_id: string
+
+  post_id: string
+
+  vacation_type:
+    VacationType
+
+  work_date: string
+
+  scheduled_time:
+    string | null
+
+  punched_at: string
+
+  applied_rate: number
+
+  status:
+    PunchStatus
+
+  anomaly_reason:
+    string | null
+
+  post: Post
+}
 
 interface CalendarDay {
   key: string
-  day: number | null
-  date: string | null
-  entry?: TimeEntry
+
+  day:
+    number | null
+
+  date:
+    string | null
+
+  punches: Punch[]
 }
 
-/* -------------------------
-   DONNÉES
-------------------------- */
+const router =
+  useRouter()
 
-const entries = ref<TimeEntry[]>([])
+const punches =
+  ref<Punch[]>([])
 
-/*
-  Le taux horaire vient maintenant
-  du profil Supabase de l'employé.
-*/
-const hourlyRate = ref(0)
+const loading =
+  ref(false)
 
-/* -------------------------
-   CHARGEMENT
-------------------------- */
-
-onMounted(async () => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (user) {
-    const {
-      data: profile,
-      error,
-    } = await supabase
-      .from('profiles')
-      .select('hourly_rate')
-      .eq('id', user.id)
-      .single()
-
-    if (error) {
-      console.error(
-        'Erreur récupération taux horaire :',
-        error
-      )
-    }
-
-    if (profile) {
-      hourlyRate.value =
-        Number(
-          profile.hourly_rate ?? 0
-        )
-    }
-  }
-
-  entries.value =
-    await getTimeEntries()
-})
-
-/* -------------------------
+/* =========================
    DATE
-------------------------- */
+========================= */
 
-const today = new Date()
+const today =
+  new Date()
 
 const displayedYear =
-  ref(today.getFullYear())
+  ref(
+    today.getFullYear()
+  )
 
 const displayedMonth =
-  ref(today.getMonth())
+  ref(
+    today.getMonth()
+  )
 
 const selectedDate =
-  ref<string | null>(null)
-
-/* -------------------------
-   ENTRÉES DU MOIS
-------------------------- */
-
-const monthEntries = computed(() => {
-  return entries.value.filter(
-    (entry) => {
-      const [year, month] =
-        entry.date
-          .split('-')
-          .map(Number)
-
-      return (
-        year ===
-          displayedYear.value &&
-        month - 1 ===
-          displayedMonth.value
-      )
-    }
-  )
-})
-
-/* -------------------------
-   TOTAL
-------------------------- */
-
-const totalMinutes = computed(() => {
-  return monthEntries.value.reduce(
-    (total, entry) =>
-      total +
-      entry.workedMinutes,
-    0
-  )
-})
-
-const totalWorked = computed(() => {
-  return formatWorkedTime(
-    totalMinutes.value
-  )
-})
-
-/* -------------------------
-   SALAIRE ESTIMÉ
-------------------------- */
-
-const estimatedSalary = computed(() => {
-  const hours =
-    totalMinutes.value / 60
-
-  return (
-    hours *
-    hourlyRate.value
-  )
-    .toFixed(2)
-    .replace('.', ',')
-})
-
-/* -------------------------
-   MOYENNE
-------------------------- */
-
-const averagePerDay = computed(() => {
-  if (!monthEntries.value.length) {
-    return '0 h'
-  }
-
-  return formatWorkedTime(
-    Math.round(
-      totalMinutes.value /
-      monthEntries.value.length
-    )
-  )
-})
-
-/* -------------------------
-   NOM DU MOIS
-------------------------- */
-
-const monthTitle = computed(() => {
-  const date = new Date(
-    displayedYear.value,
-    displayedMonth.value,
-    1
+  ref<string | null>(
+    null
   )
 
-  const value =
-    new Intl.DateTimeFormat(
-      'fr-FR',
-      {
-        month: 'long',
-        year: 'numeric',
-      }
-    ).format(date)
+/* =========================
+   MOIS
+========================= */
 
-  return (
-    value.charAt(0).toUpperCase() +
-    value.slice(1)
-  )
-})
+const monthTitle =
+  computed(() => {
 
-/* -------------------------
-   CALENDRIER
-------------------------- */
-
-const calendarDays =
-  computed<CalendarDay[]>(() => {
-    const result: CalendarDay[] = []
-
-    const year =
-      displayedYear.value
-
-    const month =
-      displayedMonth.value
-
-    const firstDay =
+    const date =
       new Date(
-        year,
-        month,
+        displayedYear.value,
+        displayedMonth.value,
         1
       )
 
-    /*
-      JavaScript :
-      dimanche = 0
-      lundi = 1
+    const value =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          month: 'long',
+          year: 'numeric',
+        }
+      ).format(date)
 
-      Nous voulons lundi
-      dans la première colonne.
-    */
-    const offset =
-      (
-        firstDay.getDay() +
-        6
-      ) % 7
-
-    for (
-      let i = 0;
-      i < offset;
-      i++
-    ) {
-      result.push({
-        key: `empty-${i}`,
-        day: null,
-        date: null,
-      })
-    }
-
-    const numberOfDays =
-      new Date(
-        year,
-        month + 1,
-        0
-      ).getDate()
-
-    for (
-      let day = 1;
-      day <= numberOfDays;
-      day++
-    ) {
-      const date =
-        createDateString(
-          year,
-          month,
-          day
-        )
-
-      const entry =
-        entries.value.find(
-          (item) =>
-            item.date === date
-        )
-
-      result.push({
-        key: date,
-        day,
-        date,
-        entry,
-      })
-    }
-
-    return result
+    return (
+      value
+        .charAt(0)
+        .toUpperCase() +
+      value.slice(1)
+    )
   })
 
-/* -------------------------
-   JOUR SÉLECTIONNÉ
-------------------------- */
+/* =========================
+   POINTAGES DU MOIS
+========================= */
 
-const selectedEntry =
+const monthPunches =
   computed(() => {
-    if (!selectedDate.value) {
-      return undefined
+
+    return punches.value.filter(
+      (punch) => {
+
+        const [
+          year,
+          month,
+        ] =
+          punch.work_date
+            .split('-')
+            .map(Number)
+
+        return (
+          year ===
+            displayedYear.value &&
+          month - 1 ===
+            displayedMonth.value
+        )
+      }
+    )
+  })
+
+/*
+  Les vacations contestées
+  restent visibles mais ne
+  comptent pas dans le salaire.
+*/
+
+const validMonthPunches =
+  computed(() => {
+
+    return monthPunches.value.filter(
+      (punch) =>
+        punch.status !==
+        'contested'
+    )
+  })
+
+/* =========================
+   TOTAL
+========================= */
+
+const totalAmount =
+  computed(() => {
+
+    return validMonthPunches.value.reduce(
+      (total, punch) =>
+        total +
+        Number(
+          punch.applied_rate ?? 0
+        ),
+      0
+    )
+  })
+
+/* =========================
+   JOURS TRAVAILLÉS
+========================= */
+
+const workedDays =
+  computed(() => {
+
+    const dates =
+      new Set(
+        validMonthPunches.value.map(
+          (punch) =>
+            punch.work_date
+        )
+      )
+
+    return dates.size
+  })
+
+/* =========================
+   CALENDRIER
+========================= */
+
+const calendarDays =
+  computed<CalendarDay[]>(
+    () => {
+
+      const result:
+        CalendarDay[] = []
+
+      const year =
+        displayedYear.value
+
+      const month =
+        displayedMonth.value
+
+      const firstDay =
+        new Date(
+          year,
+          month,
+          1
+        )
+
+      /*
+        JS :
+        dimanche = 0
+        lundi = 1
+
+        On commence par lundi.
+      */
+
+      const offset =
+        (
+          firstDay.getDay() +
+          6
+        ) % 7
+
+      for (
+        let i = 0;
+        i < offset;
+        i++
+      ) {
+        result.push({
+          key:
+            `empty-${i}`,
+
+          day: null,
+
+          date: null,
+
+          punches: [],
+        })
+      }
+
+      const numberOfDays =
+        new Date(
+          year,
+          month + 1,
+          0
+        ).getDate()
+
+      for (
+        let day = 1;
+        day <= numberOfDays;
+        day++
+      ) {
+
+        const date =
+          createDateString(
+            year,
+            month,
+            day
+          )
+
+        const dayPunches =
+          punches.value.filter(
+            (punch) =>
+              punch.work_date ===
+              date
+          )
+
+        result.push({
+          key: date,
+          day,
+          date,
+
+          punches:
+            dayPunches,
+        })
+      }
+
+      return result
+    }
+  )
+
+/* =========================
+   JOUR SÉLECTIONNÉ
+========================= */
+
+const selectedDayPunches =
+  computed(() => {
+
+    if (
+      !selectedDate.value
+    ) {
+      return []
     }
 
-    return entries.value.find(
-      (entry) =>
-        entry.date ===
-        selectedDate.value
+    return punches.value
+      .filter(
+        (punch) =>
+          punch.work_date ===
+          selectedDate.value
+      )
+      .sort(
+        (a, b) =>
+          a.punched_at.localeCompare(
+            b.punched_at
+          )
+      )
+  })
+
+const selectedValidPunches =
+  computed(() => {
+
+    return selectedDayPunches.value.filter(
+      (punch) =>
+        punch.status !==
+        'contested'
+    )
+  })
+
+const selectedDayAmount =
+  computed(() => {
+
+    return selectedValidPunches.value.reduce(
+      (total, punch) =>
+        total +
+        Number(
+          punch.applied_rate ?? 0
+        ),
+      0
     )
   })
 
 const selectDay = (
   day: CalendarDay
 ) => {
+
   if (
-    !day.entry ||
-    !day.date
+    !day.date ||
+    day.punches.length === 0
   ) {
     return
   }
@@ -466,45 +776,181 @@ const selectDay = (
     day.date
 }
 
-/* -------------------------
+/* =========================
    CHANGER DE MOIS
-------------------------- */
+========================= */
 
-const previousMonth = () => {
-  selectedDate.value = null
+const previousMonth =
+  () => {
 
-  if (
-    displayedMonth.value === 0
-  ) {
-    displayedMonth.value = 11
-    displayedYear.value--
-  } else {
-    displayedMonth.value--
+    selectedDate.value =
+      null
+
+    if (
+      displayedMonth.value ===
+      0
+    ) {
+      displayedMonth.value =
+        11
+
+      displayedYear.value--
+    } else {
+      displayedMonth.value--
+    }
   }
-}
 
-const nextMonth = () => {
-  selectedDate.value = null
+const nextMonth =
+  () => {
 
-  if (
-    displayedMonth.value === 11
-  ) {
-    displayedMonth.value = 0
-    displayedYear.value++
-  } else {
-    displayedMonth.value++
+    selectedDate.value =
+      null
+
+    if (
+      displayedMonth.value ===
+      11
+    ) {
+      displayedMonth.value =
+        0
+
+      displayedYear.value++
+    } else {
+      displayedMonth.value++
+    }
   }
-}
 
-/* -------------------------
+/* =========================
+   CHARGEMENT SUPABASE
+========================= */
+
+const loadPunches =
+  async () => {
+
+    loading.value = true
+
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser()
+
+    if (!user) {
+      loading.value = false
+
+      await router.push('/')
+
+      return
+    }
+
+    /*
+      Retrouver l'employé
+      connecté.
+    */
+
+    const {
+      data: employee,
+      error: employeeError,
+    } =
+      await supabase
+        .from('employees')
+        .select('id')
+        .eq(
+          'auth_user_id',
+          user.id
+        )
+        .maybeSingle()
+
+    if (employeeError) {
+      console.error(
+        employeeError
+      )
+
+      loading.value = false
+      return
+    }
+
+    if (!employee) {
+      punches.value = []
+
+      loading.value = false
+      return
+    }
+
+    /*
+      Récupérer toutes ses
+      vacations.
+    */
+
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from('punches')
+        .select(`
+          id,
+          employee_id,
+          post_id,
+          vacation_type,
+          work_date,
+          scheduled_time,
+          punched_at,
+          applied_rate,
+          status,
+          anomaly_reason,
+          post:posts (
+            id,
+            service_type,
+            site_name
+          )
+        `)
+        .eq(
+          'employee_id',
+          employee.id
+        )
+        .order(
+          'work_date',
+          {
+            ascending: false,
+          }
+        )
+
+    loading.value = false
+
+    if (error) {
+      console.error(error)
+      return
+    }
+
+    punches.value =
+      (data ?? []).map(
+        (punch: any) => ({
+          ...punch,
+
+          applied_rate:
+            Number(
+              punch.applied_rate ??
+              0
+            ),
+
+          post:
+            Array.isArray(
+              punch.post
+            )
+              ? punch.post[0]
+              : punch.post,
+        })
+      ) as Punch[]
+  }
+
+/* =========================
    UTILITAIRES
-------------------------- */
+========================= */
 
 const createDateString = (
   year: number,
   month: number,
   day: number
 ) => {
+
   const monthString =
     String(
       month + 1
@@ -519,56 +965,113 @@ const createDateString = (
       '0'
     )
 
-  return `${year}-${monthString}-${dayString}`
+  return (
+    `${year}-${monthString}-${dayString}`
+  )
 }
 
-function formatWorkedTime(
-  minutes: number
-) {
-  const hours =
-    Math.floor(
-      minutes / 60
-    )
-
-  const remainingMinutes =
-    minutes % 60
-
-  if (
-    remainingMinutes === 0
-  ) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${String(
-    remainingMinutes
-  ).padStart(2, '0')}`
-}
-
-const formatShortTime = (
-  minutes: number
+const formatMoney = (
+  value: number
 ) => {
-  const hours =
-    Math.floor(
-      minutes / 60
-    )
 
-  const remainingMinutes =
-    minutes % 60
+  return (
+    Number(value)
+      .toFixed(2)
+      .replace('.', ',') +
+    ' €'
+  )
+}
+
+const serviceLabel = (
+  service:
+    ServiceType
+) => {
+
+  return service ===
+    'security'
+      ? 'Sécurité'
+      : 'Ménage'
+}
+
+const vacationLabel = (
+  type:
+    VacationType
+) => {
 
   if (
-    remainingMinutes === 0
+    type === 'midi'
   ) {
-    return `${hours}h`
+    return 'Midi'
   }
 
-  return `${hours}h${String(
-    remainingMinutes
-  ).padStart(2, '0')}`
+  if (
+    type === 'soir'
+  ) {
+    return 'Soir'
+  }
+
+  return 'Journée'
+}
+
+const vacationIcon = (
+  type:
+    VacationType
+) => {
+
+  if (
+    type === 'midi'
+  ) {
+    return '☀️'
+  }
+
+  if (
+    type === 'soir'
+  ) {
+    return '🌙'
+  }
+
+  return '✨'
+}
+
+const formatScheduledTime = (
+  time:
+    string | null
+) => {
+
+  if (!time) {
+    return '—'
+  }
+
+  return time
+    .slice(0, 5)
+    .replace(':', 'h')
+}
+
+const formatPunchTime = (
+  timestamp: string
+) => {
+
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+
+      timeZone:
+        'Europe/Paris',
+    }
+  )
+    .format(
+      new Date(timestamp)
+    )
+    .replace(':', 'h')
 }
 
 const formatDate = (
   date: string
 ) => {
+
   const value =
     new Date(
       `${date}T12:00:00`
@@ -591,15 +1094,71 @@ const formatDate = (
     formatted.slice(1)
   )
 }
+
+const getStatusLabel = (
+  status:
+    PunchStatus
+) => {
+
+  if (
+    status ===
+    'validated'
+  ) {
+    return 'Validé'
+  }
+
+  if (
+    status ===
+    'suspicious'
+  ) {
+    return 'À vérifier'
+  }
+
+  return 'Contesté'
+}
+
+/*
+  Si on change de mois,
+  on enlève la sélection.
+*/
+
+watch(
+  [
+    displayedYear,
+    displayedMonth,
+  ],
+  () => {
+    selectedDate.value =
+      null
+  }
+)
+
+/* =========================
+   DÉMARRAGE
+========================= */
+
+onMounted(
+  async () => {
+    await loadPunches()
+  }
+)
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .month-page {
   min-height: 100vh;
 
-  padding: 28px 20px 115px;
+  padding:
+    28px
+    20px
+    115px;
 
   background: #f7f1ec;
+
   color: #1d2c27;
 }
 
@@ -609,7 +1168,8 @@ const formatDate = (
 .selected-card,
 .recap-card {
   width: 100%;
-  max-width: 480px;
+
+  max-width: 520px;
 
   margin-left: auto;
   margin-right: auto;
@@ -628,6 +1188,7 @@ const formatDate = (
   font-weight: 700;
 
   letter-spacing: 1.2px;
+
   text-transform: uppercase;
 
   color: #9b8174;
@@ -636,7 +1197,13 @@ const formatDate = (
 .topbar h1 {
   margin: 0;
 
-  font-size: 28px;
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size: 29px;
+  font-weight: 400;
 
   color: #17372f;
 }
@@ -644,7 +1211,7 @@ const formatDate = (
 .subtitle {
   margin: 5px 0 0;
 
-  font-size: 14px;
+  font-size: 13px;
 
   color: #7d7874;
 }
@@ -653,24 +1220,34 @@ const formatDate = (
 
 .summary-card {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+
+  grid-template-columns:
+    1fr 1fr;
 
   margin-bottom: 16px;
 
   overflow: hidden;
 
-  background: #e8ddd5;
-
   border-radius: 22px;
+
+  background: #17372f;
+
+  color: white;
 }
 
 .summary-card div {
-  padding: 18px;
+  padding: 19px;
 }
 
 .summary-card div + div {
   border-left:
-    1px solid rgba(23, 55, 47, 0.12);
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.15
+    );
 }
 
 .summary-card span {
@@ -678,15 +1255,13 @@ const formatDate = (
 
   margin-bottom: 5px;
 
-  font-size: 11px;
+  font-size: 10px;
 
-  color: #77716d;
+  opacity: 0.65;
 }
 
 .summary-card strong {
-  font-size: 21px;
-
-  color: #17372f;
+  font-size: 20px;
 }
 
 /* CALENDRIER */
@@ -698,10 +1273,12 @@ const formatDate = (
 
   margin-bottom: 16px;
 
-  background: white;
+  border:
+    1px solid #ede5df;
 
-  border: 1px solid #ede5df;
   border-radius: 24px;
+
+  background: white;
 }
 
 .calendar-header {
@@ -716,7 +1293,13 @@ const formatDate = (
 .calendar-header h2 {
   margin: 0;
 
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
   font-size: 17px;
+  font-weight: 400;
 
   color: #17372f;
 }
@@ -726,11 +1309,13 @@ const formatDate = (
   height: 38px;
 
   display: grid;
+
   place-items: center;
 
   padding: 0;
 
   border: none;
+
   border-radius: 50%;
 
   background: #f3ece7;
@@ -746,7 +1331,8 @@ const formatDate = (
 .calendar-grid {
   display: grid;
 
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns:
+    repeat(7, 1fr);
 
   gap: 6px;
 }
@@ -767,9 +1353,10 @@ const formatDate = (
 .day {
   position: relative;
 
-  min-height: 53px;
+  min-height: 55px;
 
   display: flex;
+
   flex-direction: column;
 
   align-items: center;
@@ -837,12 +1424,12 @@ const formatDate = (
   background: transparent;
 }
 
-/* JOUR */
+/* JOUR SÉLECTIONNÉ */
 
 .selected-header {
   display: flex;
 
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
 
   gap: 15px;
@@ -858,44 +1445,227 @@ const formatDate = (
   color: #17372f;
 }
 
-.selected-header > strong {
+.selected-total {
+  flex-shrink: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 2px;
+}
+
+.selected-total span {
+  font-size: 9px;
+
+  color: #928984;
+}
+
+.selected-total strong {
   font-size: 18px;
 
   color: #c86449;
 }
 
-.timeline {
+/* VACATIONS DU JOUR */
+
+.day-vacations {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.vacation-row {
+  padding: 13px;
+
+  border:
+    1px solid #eee7e2;
+
+  border-radius: 17px;
+
+  background: #faf8f6;
+}
+
+.vacation-row.contested {
+  opacity: 0.65;
+}
+
+.vacation-main {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding-right: 85px;
+
+  position: relative;
+}
+
+.vacation-icon {
+  width: 36px;
+  height: 36px;
+
+  flex-shrink: 0;
+
   display: grid;
 
-  grid-template-columns: repeat(3, 1fr);
+  place-items: center;
 
-  padding-top: 16px;
+  border-radius: 11px;
 
-  border-top: 1px solid #f0ebe7;
+  background: white;
+
+  font-size: 16px;
 }
 
-.timeline div {
-  text-align: center;
+.vacation-main > div:last-child {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
 }
 
-.timeline div + div {
-  border-left: 1px solid #eee7e2;
-}
-
-.timeline span {
-  display: block;
-
-  margin-bottom: 5px;
-
-  font-size: 10px;
-
-  color: #9b928c;
-}
-
-.timeline strong {
+.vacation-main strong {
   font-size: 12px;
 
   color: #17372f;
+}
+
+.vacation-main span {
+  font-size: 9px;
+
+  color: #8c8580;
+}
+
+/* PRIX + STATUT */
+
+.vacation-rate {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 11px;
+}
+
+.vacation-rate > strong {
+  font-size: 15px;
+
+  color: #17372f;
+}
+
+.vacation-rate strong.crossed {
+  text-decoration:
+    line-through;
+
+  color: #99918c;
+}
+
+.status {
+  padding:
+    4px
+    7px;
+
+  border-radius: 999px;
+
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.status.validated {
+  background: #e9f2ec;
+
+  color: #4f765f;
+}
+
+.status.suspicious {
+  background: #f7eee5;
+
+  color: #9d6c51;
+}
+
+.status.contested {
+  background: #f8e6e3;
+
+  color: #a34f43;
+}
+
+/* HEURES */
+
+.times {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  margin-top: 11px;
+
+  padding-top: 10px;
+
+  border-top:
+    1px solid #eee7e2;
+}
+
+.times div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.times div + div {
+  padding-left: 15px;
+
+  border-left:
+    1px solid #eee7e2;
+}
+
+.times span {
+  font-size: 8px;
+
+  text-transform: uppercase;
+
+  color: #99918c;
+}
+
+.times strong {
+  font-size: 11px;
+
+  color: #17372f;
+}
+
+.contest-message,
+.warning-message {
+  margin:
+    9px
+    0
+    0;
+
+  padding-top: 8px;
+
+  border-top:
+    1px solid #eee7e2;
+
+  font-size: 9px;
+}
+
+.contest-message {
+  color: #a34f43;
+}
+
+.warning-message {
+  color: #9d6c51;
 }
 
 /* RÉCAP */
@@ -920,13 +1690,15 @@ const formatDate = (
 }
 
 .days-count {
-  padding: 7px 10px;
+  padding:
+    7px
+    10px;
 
   border-radius: 999px;
 
   background: #f2e9e3;
 
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 
   color: #755f54;
@@ -935,13 +1707,15 @@ const formatDate = (
 .stats {
   display: grid;
 
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:
+    1fr 1fr;
 }
 
 .stats div + div {
   padding-left: 20px;
 
-  border-left: 1px solid #eee7e2;
+  border-left:
+    1px solid #eee7e2;
 }
 
 .stats span {
@@ -949,7 +1723,7 @@ const formatDate = (
 
   margin-bottom: 5px;
 
-  font-size: 11px;
+  font-size: 10px;
 
   color: #99918c;
 }
@@ -960,8 +1734,12 @@ const formatDate = (
   color: #17372f;
 }
 
+/* VIDE */
+
 .empty-month {
-  padding: 20px 0;
+  padding:
+    20px
+    0;
 
   text-align: center;
 
@@ -981,12 +1759,14 @@ const formatDate = (
 .empty-month p {
   margin: 0;
 
-  font-size: 13px;
+  font-size: 12px;
 }
 
-/* NAV */
+/* MOBILE */
 
-@media (max-width: 380px) {
+@media (
+  max-width: 380px
+) {
   .month-page {
     padding-left: 14px;
     padding-right: 14px;
@@ -1003,7 +1783,84 @@ const formatDate = (
   }
 
   .day {
-    min-height: 49px;
-  }
+  position: relative;
+
+  min-height: 55px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  /* NON TRAVAILLÉ = ROUGE */
+  background: #f8e3e0;
+
+  cursor: default;
+}
+
+.day > span {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #9b5148;
+}
+
+.day small {
+  margin-top: 3px;
+
+  font-size: 8px;
+
+  color: #527162;
+}
+
+.day i {
+  position: absolute;
+
+  bottom: 4px;
+
+  width: 4px;
+  height: 4px;
+
+  border-radius: 50%;
+
+  background: #4f765f;
+}
+
+/* TRAVAILLÉ = VERT */
+.day.worked {
+  background: #dcebe2;
+
+  cursor: pointer;
+}
+
+.day.worked > span {
+  color: #285442;
+}
+
+.day.worked small {
+  color: #4f765f;
+}
+
+/* JOUR SÉLECTIONNÉ = VERT FONCÉ */
+.day.selected {
+  background: #17372f;
+}
+
+.day.selected span,
+.day.selected small {
+  color: white;
+}
+
+.day.selected i {
+  background: white;
+}
+
+/* CASES HORS DU MOIS */
+.day.empty {
+  background: transparent;
+}
 }
 </style>

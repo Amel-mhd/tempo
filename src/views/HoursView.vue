@@ -1,16 +1,39 @@
 <template>
   <main class="hours-page">
+
+    <!-- HEADER -->
     <header class="topbar">
       <div>
-        <p class="eyebrow">Historique</p>
-        <h1>Mes horaires</h1>
+        <p class="eyebrow">
+          Historique
+        </p>
+
+        <h1>Mes vacations</h1>
+
         <p class="subtitle">
-          Retrouve toutes tes journées enregistrées
+          Retrouve toutes tes vacations pointées
         </p>
       </div>
     </header>
 
-    <!-- FILTRES SOCIÉTÉS -->
+    <!-- RÉSUMÉ -->
+    <section class="summary-card">
+      <div>
+        <span>Vacations</span>
+        <strong>{{ validPunches.length }}</strong>
+      </div>
+
+      <div class="summary-separator"></div>
+
+      <div>
+        <span>Montant</span>
+        <strong>
+          {{ formatMoney(totalAmount) }}
+        </strong>
+      </div>
+    </section>
+
+    <!-- FILTRES -->
     <section
       v-if="filters.length > 1"
       class="filter-card"
@@ -21,9 +44,12 @@
         type="button"
         class="filter-button"
         :class="{
-          active: selectedFilter === filter.id
+          active:
+            selectedFilter === filter.id
         }"
-        @click="selectedFilter = filter.id"
+        @click="
+          selectedFilter = filter.id
+        "
       >
         {{ filter.name }}
       </button>
@@ -34,85 +60,159 @@
       v-if="loading"
       class="empty-card"
     >
-      <p>Chargement des horaires...</p>
+      <p>
+        Chargement des vacations...
+      </p>
     </section>
 
     <!-- LISTE -->
     <section
-      v-else-if="filteredEntries.length > 0"
-      class="hours-card"
+      v-else-if="
+        filteredPunches.length > 0
+      "
+      class="vacations-list"
     >
       <article
-        v-for="entry in filteredEntries"
-        :key="entry.id"
-        class="hour-entry"
+        v-for="punch in filteredPunches"
+        :key="punch.id"
+        class="vacation-card"
+        :class="{
+          contested:
+            punch.status === 'contested'
+        }"
       >
+
+        <!-- DATE -->
         <div class="date-box">
           <strong>
-            {{ getDay(entry.work_date) }}
+            {{ getDay(punch.work_date) }}
           </strong>
 
           <span>
-            {{ getMonth(entry.work_date) }}
+            {{ getMonth(punch.work_date) }}
           </span>
         </div>
 
-        <div class="entry-content">
-          <div class="entry-top">
+        <!-- CONTENU -->
+        <div class="vacation-content">
+
+          <div class="vacation-top">
             <div>
               <h2>
-                {{ formatDate(entry.work_date) }}
+                {{
+                  serviceLabel(
+                    punch.post.service_type
+                  )
+                }}
               </h2>
 
-              <!-- SOCIÉTÉ -->
-              <div class="company-name">
-                {{ getCompanyName(entry) }}
+              <div class="site-name">
+                {{ punch.post.site_name }}
               </div>
-
-              <p>
-                {{ formatTime(entry.start_time) }}
-                →
-                {{ formatTime(entry.end_time) }}
-              </p>
             </div>
 
             <span
               class="status"
-              :class="entry.status"
+              :class="punch.status"
             >
-              {{ getStatusLabel(entry.status) }}
-            </span>
-          </div>
-
-          <div class="entry-bottom">
-            <span>
-              Pause :
               {{
-                getPauseDuration(
-                  entry.pause_start,
-                  entry.pause_end
+                getStatusLabel(
+                  punch.status
                 )
               }}
             </span>
+          </div>
 
-            <strong>
+          <!-- TYPE VACATION -->
+          <div class="vacation-details">
+            <div>
+              <span class="detail-label">
+                Vacation
+              </span>
+
+              <strong>
+                {{
+                  vacationLabel(
+                    punch.vacation_type
+                  )
+                }}
+              </strong>
+            </div>
+
+            <div
+              v-if="punch.scheduled_time"
+            >
+              <span class="detail-label">
+                Prévu
+              </span>
+
+              <strong>
+                {{
+                  formatScheduledTime(
+                    punch.scheduled_time
+                  )
+                }}
+              </strong>
+            </div>
+
+            <div>
+              <span class="detail-label">
+                Pointé
+              </span>
+
+              <strong>
+                {{
+                  formatPunchTime(
+                    punch.punched_at
+                  )
+                }}
+              </strong>
+            </div>
+          </div>
+
+          <!-- BAS -->
+          <div class="vacation-bottom">
+            <div>
+              <span>
+                {{ formatDate(punch.work_date) }}
+              </span>
+
+              <small
+                v-if="
+                  punch.status ===
+                  'contested'
+                "
+              >
+                Cette vacation n'est pas
+                comptabilisée.
+              </small>
+
+              <small
+                v-else-if="
+                  punch.status ===
+                  'suspicious'
+                "
+              >
+                Pointage à vérifier
+              </small>
+            </div>
+
+            <strong
+              :class="{
+                crossed:
+                  punch.status ===
+                  'contested'
+              }"
+            >
               {{
-                formatWorkedTime(
-                  entry.worked_minutes
+                formatMoney(
+                  punch.applied_rate
                 )
               }}
             </strong>
           </div>
-        </div>
 
-        <button
-          type="button"
-          class="delete-button"
-          aria-label="Supprimer les horaires"
-          @click="removeEntry(entry.id)"
-        >
-          ×
-        </button>
+        </div>
       </article>
     </section>
 
@@ -125,22 +225,24 @@
         ◷
       </div>
 
-      <h2>Aucune journée</h2>
+      <h2>
+        Aucune vacation
+      </h2>
 
       <p>
-        Tes journées enregistrées apparaîtront ici.
+        Tes vacations pointées
+        apparaîtront ici.
       </p>
 
       <RouterLink
         to="/home"
         class="add-button"
       >
-        Saisir mes horaires
+        Pointer une vacation
       </RouterLink>
     </section>
 
-    <!-- NAVBAR -->
-   <EmployeeBottomNav />
+    <EmployeeBottomNav />
   </main>
 </template>
 
@@ -156,26 +258,57 @@ import {
   useRouter,
 } from 'vue-router'
 
-import EmployeeBottomNav from '../components/EmployeeBottomNav.vue'
-import { supabase } from '../lib/supabase'
+import EmployeeBottomNav
+  from '../components/EmployeeBottomNav.vue'
 
-interface Company {
-  id?: string
-  name: string
+import {
+  supabase,
+} from '../lib/supabase'
+
+type ServiceType =
+  | 'security'
+  | 'cleaning'
+
+type VacationType =
+  | 'midi'
+  | 'soir'
+  | 'jour'
+
+type PunchStatus =
+  | 'validated'
+  | 'suspicious'
+  | 'contested'
+
+interface Post {
+  id: string
+  service_type: ServiceType
+  site_name: string
 }
 
-interface TimeEntry {
+interface Punch {
   id: string
-  user_id: string
-  company_id: string | null
+  employee_id: string
+  post_id: string
+
+  vacation_type:
+    VacationType
+
   work_date: string
-  start_time: string
-  pause_start: string | null
-  pause_end: string | null
-  end_time: string
-  worked_minutes: number
-  status: string
-  company: Company | null
+
+  scheduled_time:
+    string | null
+
+  punched_at: string
+
+  applied_rate: number
+
+  status:
+    PunchStatus
+
+  anomaly_reason:
+    string | null
+
+  post: Post
 }
 
 interface Filter {
@@ -183,198 +316,339 @@ interface Filter {
   name: string
 }
 
-const router = useRouter()
+const router =
+  useRouter()
 
-const entries = ref<TimeEntry[]>([])
+const punches =
+  ref<Punch[]>([])
 
-const loading = ref(true)
+const loading =
+  ref(true)
 
-const selectedFilter = ref('all')
+const selectedFilter =
+  ref('all')
 
-const filters = computed<Filter[]>(() => {
-  const companies = new Map<string, string>()
+/* =========================
+   FILTRES
+========================= */
 
-  entries.value.forEach((entry) => {
-    if (
-      entry.company_id &&
-      entry.company?.name
-    ) {
-      companies.set(
-        entry.company_id,
-        entry.company.name
-      )
-    }
+const filters =
+  computed<Filter[]>(() => {
+
+    const posts =
+      new Map<
+        string,
+        string
+      >()
+
+    punches.value.forEach(
+      (punch) => {
+        if (
+          punch.post_id &&
+          punch.post
+        ) {
+          posts.set(
+            punch.post_id,
+            punch.post.site_name
+          )
+        }
+      }
+    )
+
+    return [
+      {
+        id: 'all',
+        name: 'Toutes',
+      },
+
+      ...Array.from(
+        posts.entries()
+      ).map(
+        ([id, name]) => ({
+          id,
+          name,
+        })
+      ),
+    ]
   })
 
-  return [
-    {
-      id: 'all',
-      name: 'Toutes',
-    },
+/* =========================
+   VACATIONS VALIDES
+========================= */
 
-    ...Array.from(
-      companies.entries()
-    ).map(([id, name]) => ({
-      id,
-      name,
-    })),
-  ]
-})
+const validPunches =
+  computed(() => {
+    return punches.value.filter(
+      (punch) =>
+        punch.status !==
+        'contested'
+    )
+  })
 
-const filteredEntries = computed(() => {
-  const list =
-    selectedFilter.value === 'all'
-      ? entries.value
-      : entries.value.filter(
-          (entry) =>
-            entry.company_id ===
-            selectedFilter.value
+/* =========================
+   MONTANT TOTAL
+========================= */
+
+const totalAmount =
+  computed(() => {
+    return validPunches.value.reduce(
+      (total, punch) =>
+        total +
+        Number(
+          punch.applied_rate ?? 0
+        ),
+      0
+    )
+  })
+
+/* =========================
+   LISTE FILTRÉE
+========================= */
+
+const filteredPunches =
+  computed(() => {
+
+    const list =
+      selectedFilter.value ===
+      'all'
+        ? punches.value
+        : punches.value.filter(
+            (punch) =>
+              punch.post_id ===
+              selectedFilter.value
+          )
+
+    return [...list].sort(
+      (a, b) => {
+
+        const dateCompare =
+          b.work_date.localeCompare(
+            a.work_date
+          )
+
+        if (
+          dateCompare !== 0
+        ) {
+          return dateCompare
+        }
+
+        return (
+          b.punched_at ?? ''
+        ).localeCompare(
+          a.punched_at ?? ''
+        )
+      }
+    )
+  })
+
+/* =========================
+   CHARGEMENT
+========================= */
+
+const loadPunches =
+  async () => {
+
+    loading.value = true
+
+    const {
+      data: { user },
+    } =
+      await supabase.auth.getUser()
+
+    if (!user) {
+      loading.value = false
+
+      await router.push('/')
+
+      return
+    }
+
+    /*
+      On récupère l'employé
+      correspondant au compte.
+    */
+
+    const {
+      data: employee,
+      error: employeeError,
+    } =
+      await supabase
+        .from('employees')
+        .select('id')
+        .eq(
+          'auth_user_id',
+          user.id
+        )
+        .maybeSingle()
+
+    if (employeeError) {
+      console.error(
+        employeeError
+      )
+
+      loading.value = false
+      return
+    }
+
+    if (!employee) {
+      punches.value = []
+
+      loading.value = false
+      return
+    }
+
+    /*
+      Puis ses vacations.
+    */
+
+    const {
+      data,
+      error,
+    } =
+      await supabase
+        .from('punches')
+        .select(`
+          id,
+          employee_id,
+          post_id,
+          vacation_type,
+          work_date,
+          scheduled_time,
+          punched_at,
+          applied_rate,
+          status,
+          anomaly_reason,
+          post:posts (
+            id,
+            service_type,
+            site_name
+          )
+        `)
+        .eq(
+          'employee_id',
+          employee.id
+        )
+        .order(
+          'work_date',
+          {
+            ascending: false,
+          }
+        )
+        .order(
+          'punched_at',
+          {
+            ascending: false,
+          }
         )
 
-  return [...list].sort((a, b) => {
-    const dateCompare =
-      b.work_date.localeCompare(
-        a.work_date
-      )
+    loading.value = false
 
-    if (dateCompare !== 0) {
-      return dateCompare
+    if (error) {
+      console.error(error)
+      return
     }
 
-    return (
-      b.start_time ?? ''
-    ).localeCompare(
-      a.start_time ?? ''
-    )
-  })
-})
+    punches.value =
+      (data ?? []).map(
+        (punch: any) => ({
+          ...punch,
 
-const loadEntries = async () => {
-  loading.value = true
+          applied_rate:
+            Number(
+              punch.applied_rate ??
+              0
+            ),
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    loading.value = false
-    await router.push('/')
-    return
+          post:
+            Array.isArray(
+              punch.post
+            )
+              ? punch.post[0]
+              : punch.post,
+        })
+      ) as Punch[]
   }
 
-  const {
-    data,
-    error,
-  } = await supabase
-    .from('time_entries')
-    .select(`
-      id,
-      user_id,
-      company_id,
-      work_date,
-      start_time,
-      pause_start,
-      pause_end,
-      end_time,
-      worked_minutes,
-      status,
-      company:companies (
-        name
-      )
-    `)
-    .eq('user_id', user.id)
-    .order(
-      'work_date',
-      {
-        ascending: false,
-      }
-    )
-    .order(
-      'start_time',
-      {
-        ascending: false,
-      }
-    )
+/* =========================
+   AFFICHAGE
+========================= */
 
-  loading.value = false
-
-  if (error) {
-    console.error(error)
-    return
-  }
-
-  entries.value =
-    (data ?? []) as unknown as TimeEntry[]
-}
-
-const formatWorkedTime = (
-  minutes: number
+const serviceLabel = (
+  service:
+    ServiceType
 ) => {
-  const hours =
-    Math.floor(minutes / 60)
 
-  const remainingMinutes =
-    minutes % 60
-
-  if (remainingMinutes === 0) {
-    return `${hours} h`
-  }
-
-  return `${hours} h ${String(
-    remainingMinutes
-  ).padStart(2, '0')}`
+  return service ===
+    'security'
+      ? 'Sécurité'
+      : 'Ménage'
 }
 
-const formatTime = (
+const vacationLabel = (
+  type:
+    VacationType
+) => {
+
+  if (type === 'midi') {
+    return 'Midi'
+  }
+
+  if (type === 'soir') {
+    return 'Soir'
+  }
+
+  return 'Journée'
+}
+
+const formatMoney = (
+  value: number
+) => {
+
+  return (
+    Number(value)
+      .toFixed(2)
+      .replace('.', ',') +
+    ' €'
+  )
+}
+
+const formatScheduledTime = (
   time: string | null
 ) => {
+
   if (!time) {
-    return '--:--'
+    return '—'
   }
 
-  return time.slice(0, 5)
+  return time
+    .slice(0, 5)
+    .replace(':', 'h')
 }
 
-const getPauseDuration = (
-  pauseStart: string | null,
-  pauseEnd: string | null
+const formatPunchTime = (
+  timestamp: string
 ) => {
-  if (
-    !pauseStart ||
-    !pauseEnd
-  ) {
-    return 'Aucune'
-  }
 
-  const toMinutes = (
-    time: string
-  ) => {
-    const [hours, minutes] =
-      time
-        .slice(0, 5)
-        .split(':')
-        .map(Number)
-
-    return (
-      hours * 60 +
-      minutes
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone:
+        'Europe/Paris',
+    }
+  )
+    .format(
+      new Date(timestamp)
     )
-  }
-
-  const duration =
-    toMinutes(pauseEnd) -
-    toMinutes(pauseStart)
-
-  if (duration <= 0) {
-    return 'Aucune'
-  }
-
-  return formatWorkedTime(duration)
+    .replace(':', 'h')
 }
 
 const formatDate = (
   date: string
 ) => {
+
   const value =
     new Date(
       `${date}T12:00:00`
@@ -399,6 +673,7 @@ const getDay = (
 const getMonth = (
   date: string
 ) => {
+
   const value =
     new Date(
       `${date}T12:00:00`
@@ -415,86 +690,73 @@ const getMonth = (
     .toUpperCase()
 }
 
-const getCompanyName = (
-  entry: TimeEntry
-) => {
-  return (
-    entry.company?.name ??
-    'Société non renseignée'
-  )
-}
-
 const getStatusLabel = (
-  status: string
+  status:
+    PunchStatus
 ) => {
-  if (status === 'validated') {
+
+  if (
+    status === 'validated'
+  ) {
     return 'Validé'
   }
 
-  if (status === 'rejected') {
-    return 'Refusé'
+  if (
+    status === 'suspicious'
+  ) {
+    return 'À vérifier'
+  }
+
+  if (
+    status === 'contested'
+  ) {
+    return 'Contesté'
   }
 
   return 'Enregistré'
 }
 
-const removeEntry = async (
-  id: string
-) => {
-  const confirmed =
-    window.confirm(
-      'Supprimer ces horaires ?'
-    )
+/* =========================
+   DÉMARRAGE
+========================= */
 
-  if (!confirmed) {
-    return
+onMounted(
+  async () => {
+    await loadPunches()
   }
-
-  const {
-    error,
-  } = await supabase
-    .from('time_entries')
-    .delete()
-    .eq('id', id)
-
-  if (error) {
-    console.error(error)
-
-    window.alert(
-      'Impossible de supprimer ces horaires.'
-    )
-
-    return
-  }
-
-  await loadEntries()
-}
-
-onMounted(async () => {
-  await loadEntries()
-})
+)
 </script>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
+
 .hours-page {
   min-height: 100vh;
 
-  padding: 28px 20px 110px;
+  padding:
+    28px
+    20px
+    110px;
 
   background: #f7f1ec;
   color: #1d2c27;
 }
 
 .topbar,
+.summary-card,
 .filter-card,
-.hours-card,
+.vacations-list,
 .empty-card {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
 
   margin-left: auto;
   margin-right: auto;
 }
+
+/* HEADER */
 
 .topbar {
   margin-bottom: 20px;
@@ -503,11 +765,11 @@ onMounted(async () => {
 .eyebrow {
   margin: 0 0 4px;
 
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
 
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.3px;
 
   color: #9b8174;
 }
@@ -515,7 +777,13 @@ onMounted(async () => {
 .topbar h1 {
   margin: 0;
 
-  font-size: 28px;
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size: 29px;
+  font-weight: 400;
 
   color: #17372f;
 }
@@ -523,9 +791,69 @@ onMounted(async () => {
 .subtitle {
   margin: 5px 0 0;
 
-  font-size: 14px;
+  font-size: 13px;
 
   color: #7d7874;
+}
+
+/* RÉSUMÉ */
+
+.summary-card {
+  display: grid;
+
+  grid-template-columns:
+    1fr auto 1fr;
+
+  align-items: center;
+
+  margin-bottom: 18px;
+
+  padding: 18px 20px;
+
+  border-radius: 20px;
+
+  background: #17372f;
+
+  color: white;
+}
+
+.summary-card > div:not(
+  .summary-separator
+) {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.summary-card > div:last-child {
+  text-align: right;
+}
+
+.summary-card span {
+  font-size: 10px;
+
+  opacity: 0.65;
+}
+
+.summary-card strong {
+  font-size: 18px;
+}
+
+.summary-separator {
+  width: 1px;
+  height: 35px;
+
+  margin: 0 20px;
+
+  background:
+    rgba(
+      255,
+      255,
+      255,
+      0.15
+    );
 }
 
 /* FILTRES */
@@ -547,11 +875,11 @@ onMounted(async () => {
 }
 
 .filter-button {
-  min-height: 40px;
+  min-height: 39px;
 
   flex-shrink: 0;
 
-  padding: 0 16px;
+  padding: 0 15px;
 
   border: none;
   border-radius: 999px;
@@ -559,9 +887,10 @@ onMounted(async () => {
   background: white;
   color: #746e6a;
 
-  font-family: inherit;
+  font: inherit;
 
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
 
   cursor: pointer;
 }
@@ -573,27 +902,34 @@ onMounted(async () => {
 
 /* LISTE */
 
-.hours-card {
+.vacations-list {
   display: flex;
+
   flex-direction: column;
 
-  gap: 12px;
+  gap: 11px;
 }
 
-.hour-entry {
-  position: relative;
-
+.vacation-card {
   display: flex;
 
-  gap: 14px;
+  gap: 13px;
 
-  padding: 16px 42px 16px 16px;
+  padding: 15px;
+
+  border:
+    1px solid #ede5df;
+
+  border-radius: 22px;
 
   background: white;
-
-  border: 1px solid #ede5df;
-  border-radius: 22px;
 }
+
+.vacation-card.contested {
+  opacity: 0.65;
+}
+
+/* DATE */
 
 .date-box {
   width: 52px;
@@ -601,14 +937,16 @@ onMounted(async () => {
 
   flex-shrink: 0;
 
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
   border-radius: 15px;
 
   background: #f1e3dc;
-
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 .date-box strong {
@@ -627,46 +965,36 @@ onMounted(async () => {
   color: #8a7970;
 }
 
-.entry-content {
-  flex: 1;
+/* CONTENU */
 
+.vacation-content {
   min-width: 0;
+  flex: 1;
 }
 
-.entry-top {
+.vacation-top {
   display: flex;
 
+  align-items: flex-start;
   justify-content: space-between;
 
-  gap: 10px;
+  gap: 8px;
 }
 
-.entry-top h2 {
+.vacation-top h2 {
   margin: 0;
 
   font-size: 14px;
 
-  text-transform: capitalize;
-
   color: #17372f;
 }
 
-.entry-top p {
-  margin: 5px 0 0;
-
-  font-size: 12px;
-
-  color: #99918c;
-}
-
-/* SOCIÉTÉ */
-
-.company-name {
+.site-name {
   width: fit-content;
 
-  margin-top: 6px;
+  margin-top: 5px;
 
-  padding: 4px 8px;
+  padding: 4px 7px;
 
   border-radius: 999px;
 
@@ -674,134 +1002,161 @@ onMounted(async () => {
 
   color: #8c5c4b;
 
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 }
 
-/* STATUT */
+/* STATUS */
 
 .status {
-  height: fit-content;
-
   flex-shrink: 0;
 
-  padding: 5px 8px;
+  padding: 5px 7px;
 
   border-radius: 999px;
 
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 
   white-space: nowrap;
 }
 
-.status.pending {
-  background: #f7eee5;
-
-  color: #9d6c51;
-}
-
 .status.validated {
   background: #e9f2ec;
-
   color: #4f765f;
 }
 
-.status.rejected {
-  background: #f8e6e3;
+.status.suspicious {
+  background: #f7eee5;
+  color: #9d6c51;
+}
 
+.status.contested {
+  background: #f8e6e3;
   color: #a34f43;
 }
 
-/* BAS CARTE */
+/* DETAILS */
 
-.entry-bottom {
-  margin-top: 14px;
+.vacation-details {
+  display: grid;
 
-  padding-top: 12px;
+  grid-template-columns:
+    repeat(3, 1fr);
 
-  border-top:
-    1px solid
-    #f0ebe7;
+  gap: 6px;
+
+  margin-top: 13px;
+
+  padding: 11px;
+
+  border-radius: 14px;
+
+  background: #faf7f5;
+}
+
+.vacation-details > div {
+  min-width: 0;
 
   display: flex;
 
-  justify-content: space-between;
+  flex-direction: column;
 
-  gap: 12px;
+  gap: 3px;
 }
 
-.entry-bottom span {
+.detail-label {
+  font-size: 8px;
+
+  text-transform: uppercase;
+
+  color: #9c948f;
+}
+
+.vacation-details strong {
   font-size: 11px;
-
-  color: #8e8782;
-}
-
-.entry-bottom strong {
-  font-size: 14px;
 
   color: #17372f;
 }
 
-/* SUPPRIMER */
+/* BAS */
 
-.delete-button {
-  position: absolute;
+.vacation-bottom {
+  display: flex;
 
-  top: 10px;
-  right: 12px;
+  align-items: flex-end;
+  justify-content: space-between;
 
-  width: 27px;
-  height: 27px;
+  gap: 10px;
 
-  display: grid;
-  place-items: center;
+  margin-top: 12px;
 
-  padding: 0;
+  padding-top: 11px;
 
-  border: none;
-  border-radius: 50%;
-
-  background: transparent;
-
-  color: #b09f96;
-
-  font-size: 20px;
-  line-height: 1;
-
-  cursor: pointer;
+  border-top:
+    1px solid #f0ebe7;
 }
 
-.delete-button:hover {
-  background: #f7ece7;
+.vacation-bottom > div {
+  display: flex;
 
-  color: #a24d3d;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.vacation-bottom span {
+  font-size: 9px;
+
+  text-transform: capitalize;
+
+  color: #918984;
+}
+
+.vacation-bottom small {
+  font-size: 9px;
+
+  color: #a34f43;
+}
+
+.vacation-bottom > strong {
+  flex-shrink: 0;
+
+  font-size: 15px;
+
+  color: #17372f;
+}
+
+.vacation-bottom strong.crossed {
+  text-decoration:
+    line-through;
+
+  color: #99918c;
 }
 
 /* VIDE */
 
 .empty-card {
-  padding: 42px 25px;
-
-  background: white;
+  padding: 40px 25px;
 
   border:
-    1px solid
-    #ede5df;
+    1px solid #ede5df;
 
   border-radius: 24px;
+
+  background: white;
 
   text-align: center;
 }
 
 .empty-icon {
-  width: 62px;
-  height: 62px;
+  width: 60px;
+  height: 60px;
 
   margin:
     0
     auto
-    18px;
+    17px;
 
   display: grid;
 
@@ -813,21 +1168,21 @@ onMounted(async () => {
 
   color: #17372f;
 
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .empty-card h2 {
   margin: 0;
 
-  font-size: 19px;
+  font-size: 18px;
 
   color: #17372f;
 }
 
 .empty-card p {
-  margin: 8px 0 22px;
+  margin: 8px 0 21px;
 
-  font-size: 13px;
+  font-size: 12px;
 
   line-height: 1.5;
 
@@ -835,25 +1190,54 @@ onMounted(async () => {
 }
 
 .add-button {
-  min-height: 48px;
+  min-height: 46px;
 
-  padding: 0 22px;
+  padding: 0 20px;
 
   display: inline-flex;
 
   align-items: center;
   justify-content: center;
 
-  border-radius: 16px;
+  border-radius: 15px;
 
   background: #17372f;
 
   color: white;
 
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 
   text-decoration: none;
 }
 
+@media (
+  max-width: 600px
+) {
+  .hours-page {
+    padding:
+      24px
+      15px
+      110px;
+  }
+
+  .vacation-card {
+    padding: 13px;
+  }
+
+  .date-box {
+    width: 47px;
+    height: 54px;
+  }
+
+  .vacation-details {
+    gap: 4px;
+
+    padding: 10px 8px;
+  }
+
+  .vacation-details strong {
+    font-size: 10px;
+  }
+}
 </style>

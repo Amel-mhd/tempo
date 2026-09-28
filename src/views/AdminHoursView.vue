@@ -1,71 +1,135 @@
 <template>
   <main class="admin-hours-page">
     <section class="page-shell">
+
+      <!-- HEADER -->
       <header class="topbar">
-        <div>
-          <p class="eyebrow">Suivi des heures</p>
-          <h1>Heures des employés</h1>
-          <p class="subtitle">
-            Consultez les heures par employé et par mois.
-          </p>
-        </div>
+        <p class="eyebrow">
+          Suivi des vacations
+        </p>
+
+        <h1>Pointages</h1>
+
+        <p class="subtitle">
+          Consultez et gérez les vacations de vos employés.
+        </p>
       </header>
 
+      <!-- RÉSUMÉ -->
+      <section class="global-summary">
+
+        <div>
+          <span>Vacations</span>
+
+          <strong>
+            {{ validFilteredPunches.length }}
+          </strong>
+        </div>
+
+        <div>
+          <span>Montant</span>
+
+          <strong>
+            {{ formatMoney(totalAmount) }}
+          </strong>
+        </div>
+
+      </section>
+
+      <!-- FILTRES -->
       <section class="filters-card">
-  <div class="filter-field">
-    <label for="month">Mois</label>
 
-    <input
-      id="month"
-      v-model="selectedMonth"
-      type="month"
-    />
-  </div>
+        <!-- MOIS -->
+        <div class="filter-field">
+          <label for="month">
+            Mois
+          </label>
 
-  <div class="filter-field">
-    <label for="employee">Employé</label>
+          <input
+            id="month"
+            v-model="selectedMonth"
+            type="month"
+          />
+        </div>
 
-    <select
-      id="employee"
-      v-model="selectedEmployeeId"
-    >
-      <option value="">
-        Tous les employés
-      </option>
+        <!-- EMPLOYÉ -->
+        <div class="filter-field">
+          <label for="employee">
+            Employé
+          </label>
 
-      <option
-        v-for="employee in employees"
-        :key="employee.id"
-        :value="employee.id"
-      >
-        {{ employee.first_name }}
-        {{ employee.last_name }}
-      </option>
-    </select>
-  </div>
+          <select
+            id="employee"
+            v-model="selectedEmployeeId"
+          >
+            <option value="">
+              Tous les employés
+            </option>
 
-  <div class="filter-field">
-    <label for="company">Société</label>
+            <option
+              v-for="employee in employees"
+              :key="employee.id"
+              :value="employee.id"
+            >
+              {{ employee.first_name }}
+              {{ employee.last_name }}
+            </option>
+          </select>
+        </div>
 
-    <select
-      id="company"
-      v-model="selectedCompanyId"
-    >
-      <option value="">
-        Toutes les sociétés
-      </option>
+        <!-- POSTE -->
+        <div class="filter-field">
+          <label for="post">
+            Poste
+          </label>
 
-      <option
-        v-for="company in companies"
-        :key="company.id"
-        :value="company.id"
-      >
-        {{ company.name }}
-      </option>
-    </select>
-  </div>
-</section>
+          <select
+            id="post"
+            v-model="selectedPostId"
+          >
+            <option value="">
+              Tous les postes
+            </option>
 
+            <option
+              v-for="post in posts"
+              :key="post.id"
+              :value="post.id"
+            >
+              {{ serviceLabel(post.service_type) }}
+              ·
+              {{ post.site_name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- STATUT -->
+        <div class="filter-field">
+          <label for="status">
+            Statut
+          </label>
+
+          <select
+            id="status"
+            v-model="selectedStatus"
+          >
+            <option value="">
+              Tous les statuts
+            </option>
+
+            <option value="validated">
+              Validé
+            </option>
+
+            <option value="contested">
+              Contesté
+            </option>
+          </select>
+        </div>
+
+      </section>
+
+      <!-- CHARGEMENT -->
       <section
         v-if="loading"
         class="state-card"
@@ -73,6 +137,7 @@
         Chargement...
       </section>
 
+      <!-- ERREUR -->
       <section
         v-else-if="errorMessage"
         class="state-card error"
@@ -80,64 +145,88 @@
         {{ errorMessage }}
       </section>
 
+      <!-- AUCUN POINTAGE -->
       <section
         v-else-if="employeeSummaries.length === 0"
         class="state-card"
       >
-        Aucune heure enregistrée pour ce mois.
+        Aucune vacation enregistrée pour ce mois.
       </section>
 
+      <!-- LISTE EMPLOYÉS -->
       <section
         v-else
         class="employee-list"
       >
+
         <article
           v-for="employee in employeeSummaries"
           :key="employee.id"
           class="employee-card"
         >
+
+          <!-- RÉSUMÉ EMPLOYÉ -->
           <button
             type="button"
             class="employee-summary"
             @click="toggleEmployee(employee.id)"
           >
+
             <div class="employee-main">
+
               <div class="avatar">
                 {{ employee.initial }}
               </div>
 
-              <div>
+              <div class="employee-identity">
+
                 <h2>
                   {{ employee.fullName }}
                 </h2>
 
                 <p>
-                  {{ employee.companyNames }}
+                  {{ employee.postNames }}
                 </p>
+
               </div>
+
             </div>
 
+            <!-- STATISTIQUES -->
             <div class="employee-stats">
+
               <div>
-                <span>Aujourd'hui</span>
+                <span>
+                  Aujourd'hui
+                </span>
+
                 <strong>
-                  {{ formatMinutes(employee.todayMinutes) }}
+                  {{ employee.todayCount }}
+                  vac.
                 </strong>
               </div>
 
               <div>
-                <span>Ce mois</span>
+                <span>
+                  Ce mois
+                </span>
+
                 <strong>
-                  {{ formatMinutes(employee.monthMinutes) }}
+                  {{ employee.validCount }}
+                  vac.
                 </strong>
               </div>
 
               <div>
-                <span>Estimation</span>
+                <span>
+                  Montant
+                </span>
+
                 <strong>
-                  {{ formatMoney(employee.estimatedSalary) }}
+                  {{ formatMoney(employee.totalAmount) }}
                 </strong>
               </div>
+
             </div>
 
             <span class="arrow">
@@ -147,51 +236,162 @@
                   : '⌄'
               }}
             </span>
+
           </button>
 
+          <!-- DÉTAILS -->
           <div
             v-if="expandedEmployeeId === employee.id"
             class="details"
           >
-            <div
-              v-for="entry in employee.entries"
-              :key="entry.id"
-              class="entry-row"
+
+            <article
+              v-for="punch in employee.punches"
+              :key="punch.id"
+              class="punch-row"
+              :class="{
+                contested:
+                  punch.status === 'contested'
+              }"
             >
-              <div class="entry-date">
-                <strong>
-                  {{ formatDate(entry.work_date) }}
+
+              <!-- DATE / STATUT -->
+              <div class="punch-top">
+
+                <div>
+                  <strong class="punch-date">
+                    {{ formatDate(punch.work_date) }}
+                  </strong>
+
+                  <span class="punch-post">
+                    {{ serviceLabel(punch.post.service_type) }}
+                    ·
+                    {{ punch.post.site_name }}
+                  </span>
+                </div>
+
+                <span
+                  class="status-badge"
+                  :class="punch.status"
+                >
+                  {{ statusLabel(punch.status) }}
+                </span>
+
+              </div>
+
+              <!-- VACATION -->
+              <div class="vacation-line">
+
+                <div class="vacation-name">
+
+                  <span class="vacation-icon">
+                    {{ vacationIcon(punch.vacation_type) }}
+                  </span>
+
+                  <div>
+                    <span>
+                      Vacation
+                    </span>
+
+                    <strong>
+                      {{ vacationLabel(punch.vacation_type) }}
+                    </strong>
+                  </div>
+
+                </div>
+
+                <strong
+                  class="rate"
+                  :class="{
+                    crossed:
+                      punch.status === 'contested'
+                  }"
+                >
+                  {{ formatMoney(punch.applied_rate) }}
                 </strong>
 
-                <span>
-                  {{ entry.company_name }}
-                </span>
               </div>
 
-              <div class="entry-hours">
-                <span>
-                  {{ formatTime(entry.start_time) }}
-                  →
-                  {{ formatTime(entry.end_time) }}
-                </span>
+              <!-- HEURES -->
+              <div class="time-grid">
 
-                <small
-                  v-if="entry.pause_start && entry.pause_end"
+                <div>
+                  <span>
+                    Prévu
+                  </span>
+
+                  <strong>
+                    {{
+                      punch.scheduled_time
+                        ? formatScheduledTime(
+                            punch.scheduled_time
+                          )
+                        : '—'
+                    }}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    Pointé
+                  </span>
+
+                  <strong>
+                    {{ formatPunchTime(punch.punched_at) }}
+                  </strong>
+                </div>
+
+              </div>
+
+              <!-- CONTESTÉ -->
+              <div
+                v-if="punch.status === 'contested'"
+                class="contested-message"
+              >
+                Cette vacation n'est pas comptabilisée dans le montant.
+              </div>
+
+              <!-- ACTION -->
+              <div class="punch-actions">
+
+                <button
+                  v-if="punch.status !== 'contested'"
+                  type="button"
+                  class="contest-button"
+                  :disabled="updatingPunchId === punch.id"
+                  @click="contestPunch(punch)"
                 >
-                  Pause :
-                  {{ formatTime(entry.pause_start) }}
-                  →
-                  {{ formatTime(entry.pause_end) }}
-                </small>
+                  {{
+                    updatingPunchId === punch.id
+                      ? 'Modification...'
+                      : 'Contester la vacation'
+                  }}
+                </button>
+
+                <button
+                  v-else
+                  type="button"
+                  class="restore-button"
+                  :disabled="updatingPunchId === punch.id"
+                  @click="restorePunch(punch)"
+                >
+                  {{
+                    updatingPunchId === punch.id
+                      ? 'Modification...'
+                      : 'Rétablir la vacation'
+                  }}
+                </button>
+
               </div>
 
-              <div class="entry-total">
-                {{ formatMinutes(entry.worked_minutes) }}
-              </div>
-            </div>
+            </article>
+
           </div>
+
         </article>
+
       </section>
+
     </section>
 
     <AdminBottomNav />
@@ -203,299 +403,610 @@ import {
   computed,
   onMounted,
   ref,
+  watch,
 } from 'vue'
 
-import { supabase } from '../lib/supabase'
-import AdminBottomNav from '../components/AdminBottomNav.vue'
+import {
+  supabase,
+} from '../lib/supabase'
 
-type Employee = {
+import AdminBottomNav
+  from '../components/AdminBottomNav.vue'
+
+/* =========================
+   TYPES
+========================= */
+
+type ServiceType =
+  | 'security'
+  | 'cleaning'
+
+type VacationType =
+  | 'midi'
+  | 'soir'
+  | 'jour'
+
+type PunchStatus =
+  | 'validated'
+  | 'contested'
+
+interface Employee {
   id: string
   first_name: string
   last_name: string
-  hourly_rate: number
 }
 
-type Company = {
+interface Post {
   id: string
-  name: string
+  service_type: ServiceType
+  site_name: string
 }
 
-type TimeEntry = {
+interface Punch {
   id: string
+
   employee_id: string
-  company_id: string | null
+
+  post_id: string
+
+  vacation_type:
+    VacationType
+
   work_date: string
-  start_time: string
-  pause_start: string | null
-  pause_end: string | null
-  end_time: string
-  worked_minutes: number
+
+  scheduled_time:
+    string | null
+
+  punched_at: string
+
+  applied_rate: number
+
+  status:
+    PunchStatus
+
+  post:
+    Post
 }
 
-type EnrichedEntry = TimeEntry & {
-  company_name: string
-}
+/* =========================
+   DONNÉES
+========================= */
 
-const loading = ref(true)
-const errorMessage = ref('')
+const loading =
+  ref(true)
 
-const employees = ref<Employee[]>([])
-const companies = ref<Company[]>([])
-const entries = ref<TimeEntry[]>([])
+const errorMessage =
+  ref('')
+
+const employees =
+  ref<Employee[]>([])
+
+const posts =
+  ref<Post[]>([])
+
+const punches =
+  ref<Punch[]>([])
 
 const expandedEmployeeId =
   ref<string | null>(null)
 
-const now = new Date()
+const updatingPunchId =
+  ref<string | null>(null)
 
-const selectedMonth = ref(
-  `${now.getFullYear()}-${String(
-    now.getMonth() + 1
-  ).padStart(2, '0')}`
-)
+/* =========================
+   FILTRES
+========================= */
 
-const selectedEmployeeId = ref('')
-const selectedCompanyId = ref('')
+const now =
+  new Date()
 
-const today = computed(() => {
-  return new Intl.DateTimeFormat(
-    'en-CA',
-    {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }
-  ).format(new Date())
-})
+const selectedMonth =
+  ref(
+    `${now.getFullYear()}-${String(
+      now.getMonth() + 1
+    ).padStart(2, '0')}`
+  )
 
-const monthStart = computed(() => {
-  return `${selectedMonth.value}-01`
-})
+const selectedEmployeeId =
+  ref('')
 
-const monthEnd = computed(() => {
-  const [
-    year,
-    month,
-  ] = selectedMonth.value
-    .split('-')
-    .map(Number)
+const selectedPostId =
+  ref('')
 
-  const lastDay =
-    new Date(
+const selectedStatus =
+  ref('')
+
+/* =========================
+   DATES DU MOIS
+========================= */
+
+const monthStart =
+  computed(() => {
+    return `${selectedMonth.value}-01`
+  })
+
+const monthEnd =
+  computed(() => {
+
+    const [
       year,
       month,
-      0
-    ).getDate()
+    ] =
+      selectedMonth.value
+        .split('-')
+        .map(Number)
 
-  return `${selectedMonth.value}-${String(
-    lastDay
-  ).padStart(2, '0')}`
-})
+    const lastDay =
+      new Date(
+        year,
+        month,
+        0
+      ).getDate()
 
-const loadData = async () => {
-  loading.value = true
-  errorMessage.value = ''
+    return `${selectedMonth.value}-${String(
+      lastDay
+    ).padStart(2, '0')}`
+  })
 
-  const {
-    data: employeeData,
-    error: employeeError,
-  } = await supabase
-    .from('employees')
-    .select(`
-      id,
-      first_name,
-      last_name,
-      hourly_rate
-    `)
-    .order('first_name')
+/* =========================
+   AUJOURD'HUI
+   HEURE FRANÇAISE
+========================= */
 
-  if (employeeError) {
-    console.error(employeeError)
+const today =
+  computed(() => {
 
-    errorMessage.value =
-      'Impossible de charger les employés.'
+    const parts =
+      new Intl.DateTimeFormat(
+        'fr-FR',
+        {
+          timeZone:
+            'Europe/Paris',
 
-    loading.value = false
-    return
-  }
+          year:
+            'numeric',
 
-  employees.value =
-    (employeeData ?? []).map(
-      (employee) => ({
-        ...employee,
-        hourly_rate:
-          Number(
-            employee.hourly_rate ?? 0
-          ),
-      })
-    )
+          month:
+            '2-digit',
 
-  const {
-    data: companyData,
-    error: companyError,
-  } = await supabase
-    .from('companies')
-    .select('id, name')
+          day:
+            '2-digit',
+        }
+      )
+        .formatToParts(
+          new Date()
+        )
 
-  if (companyError) {
-    console.error(companyError)
-  }
+    const year =
+      parts.find(
+        (part) =>
+          part.type === 'year'
+      )?.value
 
-  companies.value =
-    companyData ?? []
+    const month =
+      parts.find(
+        (part) =>
+          part.type === 'month'
+      )?.value
 
-  const {
-    data: entryData,
-    error: entryError,
-  } = await supabase
-    .from('all_employee_time_entries')
-    .select(`
-      id,
-      employee_id,
-      company_id,
-      work_date,
-      start_time,
-      pause_start,
-      pause_end,
-      end_time,
-      worked_minutes
-    `)
-    .gte(
-      'work_date',
-      monthStart.value
-    )
-    .lte(
-      'work_date',
-      monthEnd.value
-    )
-    .order(
-      'work_date',
-      {
-        ascending: false,
-      }
-    )
-    .order(
-      'start_time',
-      {
-        ascending: true,
-      }
-    )
+    const day =
+      parts.find(
+        (part) =>
+          part.type === 'day'
+      )?.value
 
-  if (entryError) {
-    console.error(entryError)
+    return `${year}-${month}-${day}`
+  })
+
+/* =========================
+   CHARGER LES DONNÉES
+========================= */
+
+const loadData =
+  async () => {
+
+    loading.value =
+      true
 
     errorMessage.value =
-      'Impossible de charger les heures.'
+      ''
 
-    loading.value = false
-    return
-  }
+    /* EMPLOYÉS */
 
-  entries.value =
-    entryData ?? []
+    const {
+      data: employeeData,
+      error: employeeError,
+    } =
+      await supabase
+        .from('employees')
+        .select(`
+          id,
+          first_name,
+          last_name
+        `)
+        .order(
+          'first_name'
+        )
 
-  loading.value = false
-}
+    if (employeeError) {
 
-const employeeSummaries = computed(() => {
-  return employees.value
-    .filter((employee) => {
-      if (
-        selectedEmployeeId.value &&
-        employee.id !== selectedEmployeeId.value
-      ) {
-        return false
-      }
+      console.error(
+        'Erreur employés :',
+        employeeError
+      )
 
-      return true
-    })
-    .map((employee) => {
-      const employeeEntries = entries.value
-        .filter((entry) => {
-          if (entry.employee_id !== employee.id) {
-            return false
+      errorMessage.value =
+        'Impossible de charger les employés.'
+
+      loading.value =
+        false
+
+      return
+    }
+
+    employees.value =
+      employeeData ?? []
+
+    /* POSTES */
+
+    const {
+      data: postData,
+      error: postError,
+    } =
+      await supabase
+        .from('posts')
+        .select(`
+          id,
+          service_type,
+          site_name
+        `)
+        .eq(
+          'active',
+          true
+        )
+        .order(
+          'site_name'
+        )
+
+    if (postError) {
+
+      console.error(
+        'Erreur postes :',
+        postError
+      )
+
+      errorMessage.value =
+        'Impossible de charger les postes.'
+
+      loading.value =
+        false
+
+      return
+    }
+
+    posts.value =
+      (postData ?? [])
+        as Post[]
+
+    /* POINTAGES */
+
+    const {
+      data: punchData,
+      error: punchError,
+    } =
+      await supabase
+        .from('punches')
+        .select(`
+          id,
+          employee_id,
+          post_id,
+          vacation_type,
+          work_date,
+          scheduled_time,
+          punched_at,
+          applied_rate,
+          status,
+          post:posts (
+            id,
+            service_type,
+            site_name
+          )
+        `)
+        .gte(
+          'work_date',
+          monthStart.value
+        )
+        .lte(
+          'work_date',
+          monthEnd.value
+        )
+        .order(
+          'work_date',
+          {
+            ascending:
+              false,
           }
+        )
+        .order(
+          'punched_at',
+          {
+            ascending:
+              false,
+          }
+        )
+
+    if (punchError) {
+
+      console.error(
+        'Erreur pointages :',
+        punchError
+      )
+
+      errorMessage.value =
+        'Impossible de charger les pointages.'
+
+      loading.value =
+        false
+
+      return
+    }
+
+    punches.value =
+      (punchData ?? [])
+        .map(
+          (punch: any) => {
+
+            const post =
+              Array.isArray(
+                punch.post
+              )
+                ? punch.post[0]
+                : punch.post
+
+            return {
+              ...punch,
+
+              applied_rate:
+                Number(
+                  punch.applied_rate ??
+                  0
+                ),
+
+              /*
+                Si une ancienne ligne
+                avait le statut
+                "suspicious", on la
+                traite simplement comme
+                validée dans l'interface.
+              */
+              status:
+                punch.status ===
+                'contested'
+                  ? 'contested'
+                  : 'validated',
+
+              post,
+            }
+          }
+        )
+        .filter(
+          (punch) =>
+            punch.post
+        ) as Punch[]
+
+    loading.value =
+      false
+  }
+
+/* =========================
+   FILTRER LES POINTAGES
+========================= */
+
+const filteredPunches =
+  computed(() => {
+
+    return punches.value.filter(
+      (punch) => {
+
+        if (
+          selectedEmployeeId.value &&
+          punch.employee_id !==
+            selectedEmployeeId.value
+        ) {
+          return false
+        }
+
+        if (
+          selectedPostId.value &&
+          punch.post_id !==
+            selectedPostId.value
+        ) {
+          return false
+        }
+
+        if (
+          selectedStatus.value &&
+          punch.status !==
+            selectedStatus.value
+        ) {
+          return false
+        }
+
+        return true
+      }
+    )
+  })
+
+/* =========================
+   POINTAGES COMPTABILISÉS
+========================= */
+
+const validFilteredPunches =
+  computed(() => {
+
+    return filteredPunches.value.filter(
+      (punch) =>
+        punch.status !==
+        'contested'
+    )
+  })
+
+/* =========================
+   MONTANT TOTAL
+========================= */
+
+const totalAmount =
+  computed(() => {
+
+    return validFilteredPunches.value.reduce(
+      (total, punch) => {
+
+        return (
+          total +
+          Number(
+            punch.applied_rate
+          )
+        )
+      },
+      0
+    )
+  })
+
+/* =========================
+   RÉCAP PAR EMPLOYÉ
+========================= */
+
+const employeeSummaries =
+  computed(() => {
+
+    return employees.value
+
+      .filter(
+        (employee) => {
 
           if (
-            selectedCompanyId.value &&
-            entry.company_id !== selectedCompanyId.value
+            selectedEmployeeId.value &&
+            employee.id !==
+              selectedEmployeeId.value
           ) {
             return false
           }
 
           return true
-        })
-        .map<EnrichedEntry>((entry) => ({
-          ...entry,
-
-          company_name:
-            companies.value.find(
-              (company) =>
-                company.id === entry.company_id
-            )?.name ?? 'Société inconnue',
-        }))
-
-      const monthMinutes = employeeEntries.reduce(
-        (total, entry) =>
-          total + Number(entry.worked_minutes ?? 0),
-        0
+        }
       )
 
-      const todayMinutes = employeeEntries
-        .filter(
-          (entry) =>
-            entry.work_date === today.value
-        )
-        .reduce(
-          (total, entry) =>
-            total + Number(entry.worked_minutes ?? 0),
+      .map(
+        (employee) => {
+
+          const employeePunches =
+            filteredPunches.value.filter(
+              (punch) =>
+                punch.employee_id ===
+                employee.id
+            )
+
+          const validPunches =
+            employeePunches.filter(
+              (punch) =>
+                punch.status !==
+                'contested'
+            )
+
+          /* AUJOURD'HUI */
+
+          const todayCount =
+            validPunches.filter(
+              (punch) =>
+                punch.work_date ===
+                today.value
+            ).length
+
+          /* MONTANT */
+
+          const employeeAmount =
+            validPunches.reduce(
+              (total, punch) => {
+
+                return (
+                  total +
+                  Number(
+                    punch.applied_rate
+                  )
+                )
+              },
+              0
+            )
+
+          /* POSTES */
+
+          const postNames =
+            Array.from(
+              new Set(
+                employeePunches.map(
+                  (punch) => {
+
+                    return (
+                      `${serviceLabel(
+                        punch.post.service_type
+                      )} · ${
+                        punch.post.site_name
+                      }`
+                    )
+                  }
+                )
+              )
+            )
+
+          return {
+            id:
+              employee.id,
+
+            fullName:
+              `${employee.first_name} ${employee.last_name}`,
+
+            initial:
+              employee.first_name
+                ?.charAt(0)
+                .toUpperCase() ||
+              '?',
+
+            todayCount,
+
+            validCount:
+              validPunches.length,
+
+            totalAmount:
+              employeeAmount,
+
+            postNames:
+              postNames.length
+                ? postNames.join(
+                    ' • '
+                  )
+                : 'Aucun poste',
+
+            punches:
+              employeePunches,
+          }
+        }
+      )
+
+      .filter(
+        (employee) =>
+          employee.punches.length >
           0
-        )
-
-      const companyNames = Array.from(
-        new Set(
-          employeeEntries.map(
-            (entry) => entry.company_name
-          )
-        )
       )
+  })
 
-      return {
-        id: employee.id,
-
-        fullName:
-          `${employee.first_name} ${employee.last_name}`,
-
-        initial:
-          employee.first_name
-            ?.charAt(0)
-            .toUpperCase() || '?',
-
-        monthMinutes,
-
-        todayMinutes,
-
-        estimatedSalary:
-          (monthMinutes / 60) *
-          employee.hourly_rate,
-
-        companyNames:
-          companyNames.length > 0
-            ? companyNames.join(', ')
-            : 'Aucune société',
-
-        entries: employeeEntries,
-      }
-    })
-    .filter(
-      (employee) =>
-        employee.entries.length > 0
-    )
-})
+/* =========================
+   OUVRIR / FERMER EMPLOYÉ
+========================= */
 
 const toggleEmployee = (
   employeeId: string
 ) => {
+
   expandedEmployeeId.value =
     expandedEmployeeId.value ===
     employeeId
@@ -503,60 +1014,346 @@ const toggleEmployee = (
       : employeeId
 }
 
-const formatMinutes = (
-  minutes: number
-) => {
-  const hours =
-    Math.floor(minutes / 60)
+/* =========================
+   CONTESTER UNE VACATION
+========================= */
 
-  const remaining =
-    minutes % 60
+const contestPunch =
+  async (
+    punch: Punch
+  ) => {
 
-  if (remaining === 0) {
-    return `${hours} h`
+    const confirmed =
+      window.confirm(
+        `Contester la vacation ${vacationLabel(
+          punch.vacation_type
+        )} du ${formatDate(
+          punch.work_date
+        )} ?`
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    updatingPunchId.value =
+      punch.id
+
+    const {
+      error,
+    } =
+      await supabase
+        .from('punches')
+        .update({
+          status:
+            'contested',
+        })
+        .eq(
+          'id',
+          punch.id
+        )
+
+    updatingPunchId.value =
+      null
+
+    if (error) {
+
+      console.error(
+        'Erreur contestation :',
+        error
+      )
+
+      window.alert(
+        'Impossible de contester cette vacation.'
+      )
+
+      return
+    }
+
+    punch.status =
+      'contested'
   }
 
-  return `${hours} h ${String(
-    remaining
-  ).padStart(2, '0')}`
+/* =========================
+   RÉTABLIR UNE VACATION
+========================= */
+
+const restorePunch =
+  async (
+    punch: Punch
+  ) => {
+
+    const confirmed =
+      window.confirm(
+        `Rétablir la vacation ${vacationLabel(
+          punch.vacation_type
+        )} du ${formatDate(
+          punch.work_date
+        )} ?`
+      )
+
+    if (!confirmed) {
+      return
+    }
+
+    updatingPunchId.value =
+      punch.id
+
+    const {
+      error,
+    } =
+      await supabase
+        .from('punches')
+        .update({
+          status:
+            'validated',
+
+          anomaly_reason:
+            null,
+        })
+        .eq(
+          'id',
+          punch.id
+        )
+
+    updatingPunchId.value =
+      null
+
+    if (error) {
+
+      console.error(
+        'Erreur rétablissement :',
+        error
+      )
+
+      window.alert(
+        'Impossible de rétablir cette vacation.'
+      )
+
+      return
+    }
+
+    punch.status =
+      'validated'
+  }
+
+/* =========================
+   SERVICE
+========================= */
+
+const serviceLabel = (
+  service:
+    ServiceType
+) => {
+
+  return service ===
+    'security'
+      ? 'Sécurité'
+      : 'Ménage'
 }
+
+/* =========================
+   VACATION
+========================= */
+
+const vacationLabel = (
+  vacation:
+    VacationType
+) => {
+
+  if (
+    vacation ===
+    'midi'
+  ) {
+    return 'Midi'
+  }
+
+  if (
+    vacation ===
+    'soir'
+  ) {
+    return 'Soir'
+  }
+
+  return 'Journée'
+}
+
+const vacationIcon = (
+  vacation:
+    VacationType
+) => {
+
+  if (
+    vacation ===
+    'midi'
+  ) {
+    return '☀️'
+  }
+
+  if (
+    vacation ===
+    'soir'
+  ) {
+    return '🌙'
+  }
+
+  return '✨'
+}
+
+/* =========================
+   STATUT
+========================= */
+
+const statusLabel = (
+  status:
+    PunchStatus
+) => {
+
+  if (
+    status ===
+    'contested'
+  ) {
+    return 'Contesté'
+  }
+
+  return 'Validé'
+}
+
+/* =========================
+   ARGENT
+========================= */
 
 const formatMoney = (
   value: number
 ) => {
+
   return new Intl.NumberFormat(
     'fr-FR',
     {
-      style: 'currency',
-      currency: 'EUR',
+      style:
+        'currency',
+
+      currency:
+        'EUR',
     }
-  ).format(value)
+  ).format(
+    Number(value)
+  )
 }
+
+/* =========================
+   DATE
+========================= */
 
 const formatDate = (
   date: string
 ) => {
-  return new Intl.DateTimeFormat(
-    'fr-FR',
-    {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-    }
-  ).format(
+
+  const value =
     new Date(
       `${date}T12:00:00`
     )
+
+  const formatted =
+    new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        weekday:
+          'short',
+
+        day:
+          'numeric',
+
+        month:
+          'short',
+      }
+    ).format(
+      value
+    )
+
+  return (
+    formatted
+      .charAt(0)
+      .toUpperCase() +
+    formatted.slice(1)
   )
 }
 
-const formatTime = (
+/* =========================
+   HEURE PRÉVUE
+========================= */
+
+const formatScheduledTime = (
   time: string
 ) => {
-  return time.slice(0, 5)
+
+  return time
+    .slice(0, 5)
+    .replace(
+      ':',
+      'h'
+    )
 }
 
-onMounted(loadData)
+/* =========================
+   HEURE RÉELLE
+========================= */
+
+const formatPunchTime = (
+  timestamp: string
+) => {
+
+  return new Intl.DateTimeFormat(
+    'fr-FR',
+    {
+      hour:
+        '2-digit',
+
+      minute:
+        '2-digit',
+
+      hour12:
+        false,
+
+      timeZone:
+        'Europe/Paris',
+    }
+  )
+    .format(
+      new Date(
+        timestamp
+      )
+    )
+    .replace(
+      ':',
+      'h'
+    )
+}
+
+/* =========================
+   CHANGEMENT DE MOIS
+========================= */
+
+watch(
+  selectedMonth,
+  async () => {
+
+    expandedEmployeeId.value =
+      null
+
+    await loadData()
+  }
+)
+
+/* =========================
+   DÉMARRAGE
+========================= */
+
+onMounted(
+  async () => {
+    await loadData()
+  }
+)
 </script>
 
 <style scoped>
@@ -564,312 +1361,853 @@ onMounted(loadData)
   box-sizing: border-box;
 }
 
+/* PAGE */
+
 .admin-hours-page {
   min-height: 100vh;
-  padding: 28px 18px 120px;
 
-  background: #f7f1ec;
-  color: #1d2c27;
+  padding:
+    28px
+    18px
+    120px;
+
+  background:
+    #f7f1ec;
+
+  color:
+    #1d2c27;
 }
 
 .page-shell {
   width: 100%;
-  max-width: 520px;
 
-  margin: 0 auto;
+  max-width:
+    560px;
+
+  margin:
+    0 auto;
 }
 
+/* HEADER */
+
 .topbar {
-  margin-bottom: 22px;
+  margin-bottom:
+    20px;
 }
 
 .eyebrow {
-  margin: 0 0 5px;
+  margin:
+    0
+    0
+    5px;
 
-  color: #9b8174;
+  color:
+    #9b8174;
 
-  font-size: 11px;
-  font-weight: 700;
+  font-size:
+    10px;
 
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
+  font-weight:
+    700;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    1.2px;
 }
 
 h1 {
   margin: 0;
 
-  color: #17372f;
+  color:
+    #17372f;
 
-  font-size: 30px;
-  line-height: 1.1;
+  font-family:
+    Georgia,
+    'Times New Roman',
+    serif;
+
+  font-size:
+    30px;
+
+  font-weight:
+    400;
 }
 
 .subtitle {
-  margin: 7px 0 0;
+  margin:
+    7px
+    0
+    0;
 
-  color: #7d7874;
+  color:
+    #7d7874;
 
-  font-size: 13px;
-  line-height: 1.4;
+  font-size:
+    12px;
+
+  line-height:
+    1.4;
 }
 
-.filters-card {
-  margin-bottom: 16px;
-  padding: 16px;
+/* RÉSUMÉ */
 
-  border: 1px solid #ebe4df;
-  border-radius: 20px;
+.global-summary {
+  display:
+    grid;
 
-  background: #ffffff;
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  margin-bottom:
+    15px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    20px;
+
+  background:
+    #17372f;
+
+  color:
+    white;
 }
 
+.global-summary div {
+  padding:
+    17px
+    14px;
+}
+
+.global-summary div + div {
+  border-left:
+    1px solid
+    rgba(
+      255,
+      255,
+      255,
+      0.14
+    );
+}
+
+.global-summary span {
+  display:
+    block;
+
+  margin-bottom:
+    5px;
+
+  font-size:
+    9px;
+
+  opacity:
+    0.65;
+}
+
+.global-summary strong {
+  font-size:
+    16px;
+}
+
+/* FILTRES */
+
 .filters-card {
-  display: grid;
-  gap: 14px;
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  gap:
+    12px;
+
+  margin-bottom:
+    16px;
+
+  padding:
+    16px;
+
+  border:
+    1px solid
+    #ebe4df;
+
+  border-radius:
+    20px;
+
+  background:
+    white;
 }
 
 .filter-field {
-  display: flex;
-  flex-direction: column;
+  display:
+    flex;
+
+  flex-direction:
+    column;
 }
 
-.filters-card label {
-  display: block;
-  margin-bottom: 7px;
-  color: #17372f;
-  font-size: 12px;
-  font-weight: 700;
+.filter-field label {
+  margin-bottom:
+    6px;
+
+  color:
+    #17372f;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
 }
 
-.filters-card input,
-.filters-card select {
-  width: 100%;
-  min-height: 48px;
-  padding: 0 13px;
-  box-sizing: border-box;
+.filter-field input,
+.filter-field select {
+  width:
+    100%;
 
-  border: 1px solid #e5ddd8;
-  border-radius: 14px;
+  min-height:
+    44px;
 
-  background: #faf7f4;
-  color: #17372f;
+  padding:
+    0 11px;
 
-  font: inherit;
-  font-size: 13px;
+  border:
+    1px solid
+    #e5ddd8;
+
+  border-radius:
+    12px;
+
+  background:
+    #faf7f4;
+
+  color:
+    #17372f;
+
+  font:
+    inherit;
+
+  font-size:
+    11px;
 }
+
+/* ÉTATS */
 
 .state-card {
-  padding: 20px;
+  padding:
+    20px;
 
-  border: 1px solid #ebe4df;
-  border-radius: 20px;
+  border:
+    1px solid
+    #ebe4df;
 
-  background: #ffffff;
+  border-radius:
+    20px;
 
-  color: #7d7874;
+  background:
+    white;
 
-  font-size: 13px;
+  color:
+    #7d7874;
+
+  font-size:
+    12px;
 }
 
 .state-card.error {
-  background: #f9e7e3;
-  color: #a84f40;
+  background:
+    #f9e7e3;
+
+  color:
+    #a84f40;
 }
+
+/* LISTE */
 
 .employee-list {
-  display: flex;
-  flex-direction: column;
+  display:
+    flex;
 
-  gap: 14px;
+  flex-direction:
+    column;
+
+  gap:
+    13px;
 }
 
+/* CARTE EMPLOYÉ */
+
 .employee-card {
-  overflow: hidden;
+  overflow:
+    hidden;
 
-  border: 1px solid #ebe4df;
-  border-radius: 23px;
+  border:
+    1px solid
+    #ebe4df;
 
-  background: #ffffff;
+  border-radius:
+    23px;
+
+  background:
+    white;
 }
 
 .employee-summary {
-  width: 100%;
+  width:
+    100%;
 
-  display: flex;
-  flex-direction: column;
+  display:
+    flex;
 
-  gap: 16px;
+  flex-direction:
+    column;
 
-  padding: 18px;
+  gap:
+    14px;
 
-  border: none;
+  padding:
+    17px;
 
-  background: transparent;
+  border:
+    none;
 
-  text-align: left;
+  background:
+    transparent;
 
-  cursor: pointer;
+  text-align:
+    left;
+
+  font-family:
+    inherit;
+
+  cursor:
+    pointer;
 }
 
-.employee-main {
-  display: flex;
-  align-items: center;
+/* IDENTITÉ */
 
-  gap: 12px;
+.employee-main {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    11px;
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width:
+    40px;
 
-  flex-shrink: 0;
+  height:
+    40px;
 
-  display: grid;
-  place-items: center;
+  flex-shrink:
+    0;
 
-  border-radius: 50%;
+  display:
+    grid;
 
-  background: #17372f;
-  color: #ffffff;
+  place-items:
+    center;
 
-  font-size: 16px;
-  font-weight: 700;
+  border-radius:
+    50%;
+
+  background:
+    #17372f;
+
+  color:
+    white;
+
+  font-size:
+    15px;
+
+  font-weight:
+    700;
+}
+
+.employee-identity {
+  min-width:
+    0;
 }
 
 .employee-main h2 {
-  margin: 0;
+  margin:
+    0;
 
-  color: #17372f;
+  color:
+    #17372f;
 
-  font-size: 16px;
+  font-size:
+    15px;
 }
 
 .employee-main p {
-  margin: 4px 0 0;
+  margin:
+    3px
+    0
+    0;
 
-  color: #918984;
+  color:
+    #918984;
 
-  font-size: 11px;
+  font-size:
+    9px;
+
+  line-height:
+    1.4;
 }
 
+/* STATS EMPLOYÉ */
+
 .employee-stats {
-  display: grid;
+  display:
+    grid;
+
   grid-template-columns:
     repeat(3, 1fr);
 
-  gap: 8px;
+  gap:
+    7px;
 }
 
 .employee-stats div {
-  padding: 11px 9px;
+  padding:
+    10px
+    8px;
 
-  border-radius: 14px;
+  border-radius:
+    13px;
 
-  background: #f8f3ef;
+  background:
+    #f8f3ef;
 }
 
 .employee-stats span {
-  display: block;
+  display:
+    block;
 
-  margin-bottom: 4px;
+  margin-bottom:
+    4px;
 
-  color: #948b85;
+  color:
+    #948b85;
 
-  font-size: 9px;
+  font-size:
+    8px;
 }
 
 .employee-stats strong {
-  color: #17372f;
+  color:
+    #17372f;
 
-  font-size: 13px;
+  font-size:
+    11px;
 }
 
 .arrow {
-  align-self: flex-end;
+  align-self:
+    flex-end;
 
-  color: #9b8174;
+  color:
+    #9b8174;
 
-  font-size: 18px;
+  font-size:
+    17px;
 }
+
+/* DÉTAILS */
 
 .details {
   border-top:
-    1px solid #eee7e2;
+    1px solid
+    #eee7e2;
 }
 
-.entry-row {
-  display: grid;
-  grid-template-columns:
-    1fr auto;
-
-  gap: 8px 12px;
-
-  padding: 15px 18px;
+.punch-row {
+  padding:
+    16px
+    17px;
 
   border-bottom:
-    1px solid #f1ebe7;
+    1px solid
+    #f1ebe7;
 }
 
-.entry-row:last-child {
-  border-bottom: none;
+.punch-row:last-child {
+  border-bottom:
+    none;
 }
 
-.entry-date {
-  display: flex;
-  flex-direction: column;
-
-  gap: 3px;
+.punch-row.contested {
+  background:
+    #fcf8f7;
 }
 
-.entry-date strong {
-  color: #17372f;
+/* DATE */
 
-  font-size: 12px;
+.punch-top {
+  display:
+    flex;
+
+  align-items:
+    flex-start;
+
+  justify-content:
+    space-between;
+
+  gap:
+    12px;
 }
 
-.entry-date span {
-  color: #9b8174;
+.punch-top > div {
+  display:
+    flex;
 
-  font-size: 10px;
+  flex-direction:
+    column;
+
+  gap:
+    3px;
 }
 
-.entry-hours {
-  display: flex;
-  flex-direction: column;
+.punch-date {
+  color:
+    #17372f;
 
-  gap: 3px;
-
-  color: #605b57;
-
-  font-size: 11px;
+  font-size:
+    11px;
 }
 
-.entry-hours small {
-  color: #9b938e;
+.punch-post {
+  color:
+    #9b8174;
 
-  font-size: 9px;
+  font-size:
+    9px;
 }
 
-.entry-total {
-  grid-row: span 2;
+/* STATUT */
 
-  align-self: center;
+.status-badge {
+  flex-shrink:
+    0;
 
-  color: #17372f;
+  padding:
+    5px
+    8px;
 
-  font-size: 13px;
-  font-weight: 700;
+  border-radius:
+    999px;
+
+  font-size:
+    8px;
+
+  font-weight:
+    700;
 }
 
-@media (max-width: 380px) {
+.status-badge.validated {
+  background:
+    #e5f0e9;
+
+  color:
+    #416b56;
+}
+
+.status-badge.contested {
+  background:
+    #f8e2df;
+
+  color:
+    #a84f40;
+}
+
+/* VACATION */
+
+.vacation-line {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    15px;
+
+  margin-top:
+    13px;
+}
+
+.vacation-name {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  gap:
+    9px;
+}
+
+.vacation-icon {
+  width:
+    34px;
+
+  height:
+    34px;
+
+  display:
+    grid;
+
+  place-items:
+    center;
+
+  border-radius:
+    10px;
+
+  background:
+    #f7f1ec;
+
+  font-size:
+    15px;
+}
+
+.vacation-name > div {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    2px;
+}
+
+.vacation-name span {
+  color:
+    #99918c;
+
+  font-size:
+    8px;
+}
+
+.vacation-name strong {
+  color:
+    #17372f;
+
+  font-size:
+    11px;
+}
+
+/* TARIF */
+
+.rate {
+  color:
+    #c86449;
+
+  font-size:
+    14px;
+}
+
+.rate.crossed {
+  color:
+    #a9a09a;
+
+  text-decoration:
+    line-through;
+}
+
+/* HEURES */
+
+.time-grid {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(2, 1fr);
+
+  margin-top:
+    12px;
+
+  padding:
+    11px
+    0;
+
+  border-top:
+    1px solid
+    #f0ebe7;
+
+  border-bottom:
+    1px solid
+    #f0ebe7;
+}
+
+.time-grid div {
+  display:
+    flex;
+
+  flex-direction:
+    column;
+
+  gap:
+    3px;
+}
+
+.time-grid div + div {
+  padding-left:
+    15px;
+
+  border-left:
+    1px solid
+    #eee7e2;
+}
+
+.time-grid span {
+  color:
+    #99918c;
+
+  font-size:
+    8px;
+
+  text-transform:
+    uppercase;
+}
+
+.time-grid strong {
+  color:
+    #17372f;
+
+  font-size:
+    11px;
+}
+
+/* CONTESTÉ */
+
+.contested-message {
+  margin-top:
+    10px;
+
+  padding:
+    9px
+    10px;
+
+  border-radius:
+    10px;
+
+  background:
+    #f9e8e5;
+
+  color:
+    #a84f40;
+
+  font-size:
+    9px;
+
+  line-height:
+    1.4;
+}
+
+/* ACTIONS */
+
+.punch-actions {
+  margin-top:
+    11px;
+}
+
+.contest-button,
+.restore-button {
+  width:
+    100%;
+
+  min-height:
+    38px;
+
+  border-radius:
+    11px;
+
+  font-family:
+    inherit;
+
+  font-size:
+    10px;
+
+  font-weight:
+    700;
+
+  cursor:
+    pointer;
+}
+
+.contest-button {
+  border:
+    1px solid
+    #e5c6bf;
+
+  background:
+    #fbefec;
+
+  color:
+    #a84f40;
+}
+
+.restore-button {
+  border:
+    1px solid
+    #bfd5c8;
+
+  background:
+    #edf5f0;
+
+  color:
+    #31594c;
+}
+
+.contest-button:disabled,
+.restore-button:disabled {
+  opacity:
+    0.5;
+
+  cursor:
+    wait;
+}
+
+/* MOBILE */
+
+@media (
+  max-width: 400px
+) {
+
   .admin-hours-page {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left:
+      14px;
+
+    padding-right:
+      14px;
+  }
+
+  .filters-card {
+    grid-template-columns:
+      1fr;
+  }
+
+  .global-summary {
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 
   .employee-stats {
     grid-template-columns:
-      1fr;
+      repeat(3, 1fr);
   }
 }
 </style>
