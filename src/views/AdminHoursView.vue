@@ -10856,6 +10856,11 @@ h1 {
 
 }
 
+.employee-search-box input::-webkit-search-cancel-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
 
 
 </style>
