@@ -620,23 +620,17 @@
 
 
 
-            <option
-
-              v-for="post in posts"
-
-              :key="post.id"
-
-              :value="post.id"
-
-            >
-
-              {{ serviceLabel(post.service_type) }}
-
-              ·
-
-              {{ post.site_name }}
-
-            </option>
+           <option
+  v-for="post in posts"
+  :key="post.id"
+  :value="post.id"
+>
+  {{
+    post.service_type === 'on_call'
+      ? 'Astreinte'
+      : `${serviceLabel(post.service_type)} · ${post.site_name}`
+  }}
+</option>
 
           </select>
 
@@ -3083,22 +3077,16 @@ const employeeSummaries =
 
 
         const postNames =
-
-          assignedPosts.map(
-
-            (assignment) =>
-
-              `${serviceLabel(
-
-                assignment.post.service_type
-
-              )} · ${
-
-                assignment.post.site_name
-
-              }`
-
-          )
+  assignedPosts.map(
+    (assignment) =>
+      assignment.post.service_type === 'on_call'
+        ? 'Astreinte'
+        : `${serviceLabel(
+            assignment.post.service_type
+          )} · ${
+            assignment.post.site_name
+          }`
+  )
 
 
 
