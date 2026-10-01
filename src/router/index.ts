@@ -41,6 +41,10 @@ const router = createRouter({
       component: ResetPasswordView,
     },
 
+    // =========================
+    // EMPLOYÉ
+    // =========================
+
     {
       path: '/home',
       name: 'home',
@@ -69,18 +73,24 @@ const router = createRouter({
       meta: { role: 'employee' },
     },
 
+    // =========================
+    // ADMIN + OWNER
+    // =========================
+
     {
       path: '/admin',
       name: 'admin',
       component: AdminHomeView,
       meta: { role: 'admin' },
     },
+
     {
-  path: '/admin/heures',
-  name: 'admin-hours',
-  component: AdminHoursView,
-  meta: { role: 'admin' },
-},
+      path: '/admin/heures',
+      name: 'admin-hours',
+      component: AdminHoursView,
+      meta: { role: 'admin' },
+    },
+
     {
       path: '/admin/equipe',
       name: 'admin-team',
@@ -102,6 +112,10 @@ router.beforeEach(async (to) => {
     data: { session },
   } = await supabase.auth.getSession()
 
+  // =========================
+  // PAS CONNECTÉ
+  // =========================
+
   if (!session) {
     const publicRoutes = [
       '/',
@@ -117,6 +131,10 @@ router.beforeEach(async (to) => {
   }
 
   const user = session.user
+
+  // =========================
+  // RÉCUPÉRATION DU RÔLE
+  // =========================
 
   const {
     data: profile,
@@ -139,29 +157,47 @@ router.beforeEach(async (to) => {
 
   const role = profile.role
 
-  // On laisse toujours passer la page de réinitialisation
+  const isAdmin =
+    role === 'admin' || role === 'owner'
+
+  // =========================
+  // RESET PASSWORD
+  // =========================
+
   if (to.path === '/reset-password') {
     return true
   }
 
+  // =========================
+  // PAGE DE CONNEXION
+  // =========================
+
   if (to.path === '/') {
-    if (role === 'admin') {
+    if (isAdmin) {
       return '/admin'
     }
 
     return '/home'
   }
 
+  // =========================
+  // PROTECTION ADMIN
+  // =========================
+
   if (
     to.meta.role === 'admin' &&
-    role !== 'admin'
+    !isAdmin
   ) {
     return '/home'
   }
 
+  // =========================
+  // PROTECTION EMPLOYÉ
+  // =========================
+
   if (
     to.meta.role === 'employee' &&
-    role === 'admin'
+    isAdmin
   ) {
     return '/admin'
   }
