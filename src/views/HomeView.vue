@@ -635,23 +635,25 @@
                   </small>
                 </div>
               </div>
-
+              
               <button
-                type="button"
-                class="punch-button"
-                :disabled="
-                  punchingKey ===
-                  `${assignment.post.id}-jour`
-                "
-                @click="punch(assignment, 'jour')"
-              >
-                {{
-                  punchingKey ===
-                  `${assignment.post.id}-jour`
-                    ? 'Pointage...'
-                    : 'Pointer'
-                }}
-              </button>
+  type="button"
+  class="punch-button"
+  :disabled="
+    !isCleaningPunchOpen(assignment.post.site_name) ||
+    punchingKey === `${assignment.post.id}-jour`
+  "
+  @click="punch(assignment, 'jour')"
+>
+  {{
+    !isCleaningPunchOpen(assignment.post.site_name)
+      ? 'Disponible à 00h00'
+      : punchingKey === `${assignment.post.id}-jour`
+        ? 'Pointage...'
+        : 'Pointer'
+  }}
+</button>
+               
             </article>
           </div>
 
@@ -1340,6 +1342,34 @@ const isSecurityPunchOpen = (
   }
 
   return true
+}
+
+const isCleaningPunchOpen = (
+  siteName: string
+) => {
+  
+  if (siteName === 'Sausset-les-Pins') {
+    return true
+  }
+
+  const parisTime =
+    new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Paris',
+      }
+    ).format(new Date())
+
+  const [hour, minute] =
+    parisTime.split(':').map(Number)
+
+  const currentMinutes =
+    hour * 60 + minute
+
+  return currentMinutes < 16 * 60
 }
 
 const punchTime = (

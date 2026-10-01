@@ -92,8 +92,6 @@
 
 
 
-        <!-- EMPLOYÉ -->
-
         <div class="form-field">
 
           <label>Employé</label>
@@ -137,8 +135,6 @@
         </div>
 
 
-
-        <!-- POSTE -->
 
         <div
 
@@ -196,13 +192,7 @@
 
           <p
 
-            v-if="
-
-              newEmployeeId &&
-
-              availableAssignments.length === 0
-
-            "
+            v-if="availableAssignments.length === 0"
 
             class="field-help error-text"
 
@@ -215,8 +205,6 @@
         </div>
 
 
-
-        <!-- DATE -->
 
         <div
 
@@ -242,7 +230,7 @@
 
 
 
-        <!-- VACATION SÉCURITÉ -->
+        <!-- SÉCURITÉ -->
 
         <div
 
@@ -324,7 +312,7 @@
 
 
 
-        <!-- VACATION MÉNAGE -->
+        <!-- MÉNAGE -->
 
         <div
 
@@ -374,8 +362,6 @@
 
             <span>Poste</span>
 
-
-
             <strong>
 
               {{ serviceLabel(selectedAssignment.post.service_type) }}
@@ -393,8 +379,6 @@
           <div>
 
             <span>Montant</span>
-
-
 
             <strong>
 
@@ -522,13 +506,9 @@
 
       <section class="filters-card">
 
-        <div class="filter-field">
+        <div class="filter-field month-field">
 
-          <label for="month">
-
-            Mois
-
-          </label>
+          <label for="month">Mois</label>
 
 
 
@@ -548,11 +528,7 @@
 
         <div class="filter-field">
 
-          <label for="employee">
-
-            Employé
-
-          </label>
+          <label for="employee">Employé</label>
 
 
 
@@ -596,11 +572,7 @@
 
         <div class="filter-field">
 
-          <label for="post">
-
-            Poste
-
-          </label>
+          <label for="post">Poste</label>
 
 
 
@@ -620,17 +592,27 @@
 
 
 
-           <option
-  v-for="post in posts"
-  :key="post.id"
-  :value="post.id"
->
-  {{
-    post.service_type === 'on_call'
-      ? 'Astreinte'
-      : `${serviceLabel(post.service_type)} · ${post.site_name}`
-  }}
-</option>
+            <option
+
+              v-for="post in posts"
+
+              :key="post.id"
+
+              :value="post.id"
+
+            >
+
+              {{
+
+                post.service_type === 'on_call'
+
+                  ? 'Astreinte'
+
+                  : `${serviceLabel(post.service_type)} · ${post.site_name}`
+
+              }}
+
+            </option>
 
           </select>
 
@@ -640,11 +622,7 @@
 
         <div class="filter-field">
 
-          <label for="status">
-
-            Statut
-
-          </label>
+          <label for="status">Statut</label>
 
 
 
@@ -686,7 +664,7 @@
 
 
 
-      <!-- CHARGEMENT -->
+      <!-- ÉTATS -->
 
       <section
 
@@ -702,8 +680,6 @@
 
 
 
-      <!-- ERREUR -->
-
       <section
 
         v-else-if="errorMessage"
@@ -717,8 +693,6 @@
       </section>
 
 
-
-      <!-- VIDE -->
 
       <section
 
@@ -776,19 +750,9 @@
 
               <div class="employee-identity">
 
-                <h2>
+                <h2>{{ employee.fullName }}</h2>
 
-                  {{ employee.fullName }}
-
-                </h2>
-
-
-
-                <p>
-
-                  {{ employee.postNames }}
-
-                </p>
+                <p>{{ employee.postNames }}</p>
 
               </div>
 
@@ -802,11 +766,7 @@
 
                 <span>Aujourd'hui</span>
 
-                <strong>
-
-                  {{ employee.todayLabel }}
-
-                </strong>
+                <strong>{{ employee.todayLabel }}</strong>
 
               </div>
 
@@ -816,11 +776,7 @@
 
                 <span>Ce mois</span>
 
-                <strong>
-
-                  {{ employee.monthLabel }}
-
-                </strong>
+                <strong>{{ employee.monthLabel }}</strong>
 
               </div>
 
@@ -944,13 +900,25 @@
 
                     <span>
 
-                      {{ punch.vacation_type === 'astreinte' ? 'Astreinte' : 'Vacation' }}
+                      {{
+
+                        punch.vacation_type === 'astreinte'
+
+                          ? 'Astreinte'
+
+                          : 'Vacation'
+
+                      }}
 
                     </span>
 
 
 
-                    <strong v-if="punch.vacation_type !== 'astreinte'">
+                    <strong
+
+                      v-if="punch.vacation_type !== 'astreinte'"
+
+                    >
 
                       {{ vacationLabel(punch.vacation_type) }}
 
@@ -988,19 +956,13 @@
 
                   <span>Prévu</span>
 
-
-
                   <strong>
 
                     {{
 
                       punch.scheduled_time
 
-                        ? formatScheduledTime(
-
-                            punch.scheduled_time
-
-                          )
+                        ? formatScheduledTime(punch.scheduled_time)
 
                         : '—'
 
@@ -1015,8 +977,6 @@
                 <div>
 
                   <span>Enregistré</span>
-
-
 
                   <strong>
 
@@ -1038,6 +998,8 @@
 
 
 
+              <!-- CONTESTÉ -->
+
               <div
 
                 v-if="punch.status === 'contested'"
@@ -1046,23 +1008,41 @@
 
               >
 
-                Cette vacation n'est pas comptabilisée dans le montant.
+                <div class="contested-message-icon">!</div>
+
+
+
+                <div>
+
+                  <strong>Vacation contestée</strong>
+
+                  <p>
+
+                    Cette vacation n'est pas comptabilisée
+
+                    dans le montant.
+
+                  </p>
+
+                </div>
 
               </div>
 
 
 
-              <div class="punch-actions">
+              <!-- ACTIONS -->
+
+              <div
+
+                v-if="punch.vacation_type !== 'astreinte'"
+
+                class="punch-actions"
+
+              >
 
                 <button
 
-                  v-if="
-
-  punch.vacation_type !== 'astreinte' &&
-
-  punch.status !== 'contested'
-
-"
+                  v-if="punch.status !== 'contested'"
 
                   type="button"
 
@@ -1088,31 +1068,59 @@
 
 
 
-                <button
+                <div
 
-                  v-else-if="punch.vacation_type !== 'astreinte'"
+                  v-else
 
-                  type="button"
-
-                  class="restore-button"
-
-                  :disabled="updatingPunchId === punch.id"
-
-                  @click="restorePunch(punch)"
+                  class="contested-actions"
 
                 >
 
-                  {{
+                  <button
 
-                    updatingPunchId === punch.id
+                    type="button"
 
-                      ? 'Modification...'
+                    class="restore-button"
 
-                      : 'Rétablir la vacation'
+                    :disabled="updatingPunchId === punch.id"
 
-                  }}
+                    @click="restorePunch(punch)"
 
-                </button>
+                  >
+
+                    {{
+
+                      updatingPunchId === punch.id
+
+                        ? 'Modification...'
+
+                        : 'Rétablir'
+
+                    }}
+
+                  </button>
+
+
+
+                  <button
+
+                    type="button"
+
+                    class="delete-button"
+
+                    :disabled="updatingPunchId === punch.id"
+
+                    @click="deletePunch(punch)"
+
+                  >
+
+                    <span class="trash-icon">⌫</span>
+
+                    Supprimer
+
+                  </button>
+
+                </div>
 
               </div>
 
@@ -1128,7 +1136,136 @@
 
 
 
-    <AdminBottomNav />
+    <!-- POPUP CONTESTATION -->
+  <div
+    v-if="punchToContest"
+    class="delete-modal-overlay"
+    @click.self="closeContestModal"
+  >
+    <section
+      class="delete-modal contest-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contest-modal-title"
+    >
+      <div class="delete-modal-icon contest-modal-icon">!</div>
+
+      <p class="delete-modal-eyebrow">Contestation</p>
+
+      <h2 id="contest-modal-title">Contester cette vacation ?</h2>
+
+      <p class="delete-modal-description">
+        Vérifiez les informations avant de confirmer la contestation.
+      </p>
+
+      <div class="delete-modal-info">
+        <div>
+          <span>Vacation</span>
+          <strong>{{ vacationLabel(punchToContest.vacation_type) }}</strong>
+        </div>
+
+        <div>
+          <span>Date</span>
+          <strong>{{ formatDate(punchToContest.work_date) }}</strong>
+        </div>
+
+        <div>
+          <span>Montant</span>
+          <strong>{{ formatMoney(punchToContest.applied_rate) }}</strong>
+        </div>
+      </div>
+
+      <div class="delete-modal-warning contest-modal-warning">
+        <strong>Vacation contestée</strong>
+        <span>
+          Cette vacation ne sera plus comptabilisée dans le montant.
+        </span>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button
+          type="button"
+          class="modal-cancel-button"
+          :disabled="contestingPunch"
+          @click="closeContestModal"
+        >
+          Annuler
+        </button>
+
+        <button
+          type="button"
+          class="modal-contest-button"
+          :disabled="contestingPunch"
+          @click="confirmContestPunch"
+        >
+          {{ contestingPunch ? 'Contestation...' : 'Contester' }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+    <!-- POPUP SUPPRESSION -->
+  <div
+    v-if="punchToDelete"
+    class="delete-modal-overlay"
+    @click.self="closeDeleteModal"
+  >
+    <section class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title">
+      <div class="delete-modal-icon">⌫</div>
+
+      <p class="delete-modal-eyebrow">Suppression</p>
+
+      <h2 id="delete-modal-title">Supprimer cette vacation ?</h2>
+
+      <p class="delete-modal-description">
+        Vérifiez les informations avant de confirmer la suppression.
+      </p>
+
+      <div class="delete-modal-info">
+        <div>
+          <span>Vacation</span>
+          <strong>{{ vacationLabel(punchToDelete.vacation_type) }}</strong>
+        </div>
+
+        <div>
+          <span>Date</span>
+          <strong>{{ formatDate(punchToDelete.work_date) }}</strong>
+        </div>
+
+        <div>
+          <span>Montant</span>
+          <strong>{{ formatMoney(punchToDelete.applied_rate) }}</strong>
+        </div>
+      </div>
+
+      <div class="delete-modal-warning">
+        <strong>Action définitive</strong>
+        <span>Cette vacation sera supprimée définitivement.</span>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button
+          type="button"
+          class="modal-cancel-button"
+          :disabled="deletingPunch"
+          @click="closeDeleteModal"
+        >
+          Annuler
+        </button>
+
+        <button
+          type="button"
+          class="modal-delete-button"
+          :disabled="deletingPunch"
+          @click="confirmDeletePunch"
+        >
+          {{ deletingPunch ? 'Suppression...' : 'Supprimer' }}
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <AdminBottomNav />
 
   </main>
 
@@ -1276,14 +1413,6 @@ interface OnCallAssignment {
 
 
 
-/* =========================
-
-   DONNÉES
-
-\========================= */
-
-
-
 const loading = ref(true)
 
 const errorMessage = ref('')
@@ -1302,23 +1431,14 @@ const onCallAssignments = ref<OnCallAssignment[]>([])
 
 
 
-const expandedEmployeeId =
+const expandedEmployeeId = ref<string | null>(null)
 
-  ref<string | null>(null)
+const updatingPunchId = ref<string | null>(null)
+const punchToDelete = ref<Punch | null>(null)
+const deletingPunch = ref(false)
 
-
-
-const updatingPunchId =
-
-  ref<string | null>(null)
-
-
-
-/* =========================
-
-   FILTRES
-
-\========================= */
+const punchToContest = ref<Punch | null>(null)
+const contestingPunch = ref(false)
 
 
 
@@ -1346,14 +1466,6 @@ const selectedStatus = ref('')
 
 
 
-/* =========================
-
-   AJOUT VACATION
-
-\========================= */
-
-
-
 const showAddVacation = ref(false)
 
 const addingVacation = ref(false)
@@ -1375,14 +1487,6 @@ const newVacationType =
 const addVacationError = ref('')
 
 const addVacationSuccess = ref('')
-
-
-
-/* =========================
-
-   DATE FRANCE
-
-\========================= */
 
 
 
@@ -1414,7 +1518,7 @@ const getParisDate = () => {
 
     parts.find(
 
-      (part) => part.type === 'year'
+      part => part.type === 'year'
 
     )?.value
 
@@ -1424,7 +1528,7 @@ const getParisDate = () => {
 
     parts.find(
 
-      (part) => part.type === 'month'
+      part => part.type === 'month'
 
     )?.value
 
@@ -1434,7 +1538,7 @@ const getParisDate = () => {
 
     parts.find(
 
-      (part) => part.type === 'day'
+      part => part.type === 'day'
 
     )?.value
 
@@ -1450,67 +1554,47 @@ const today = computed(() => getParisDate())
 
 
 
-/* =========================
+const monthStart = computed(() => {
 
-   MOIS
+  return `${selectedMonth.value}-01`
 
-\========================= */
-
-
-
-const monthStart =
-
-  computed(() => {
-
-    return `${selectedMonth.value}-01`
-
-  })
+})
 
 
 
-const monthEnd =
+const monthEnd = computed(() => {
 
-  computed(() => {
+  const [year, month] =
 
-    const [year, month] =
+    selectedMonth.value
 
-      selectedMonth.value
+      .split('-')
 
-        .split('-')
-
-        .map(Number)
+      .map(Number)
 
 
 
-    const lastDay =
+  const lastDay =
 
-      new Date(
+    new Date(
 
-        year,
+      year,
 
-        month,
+      month,
 
-        0
+      0
 
-      ).getDate()
-
-
-
-    return `${selectedMonth.value}-${String(
-
-      lastDay
-
-    ).padStart(2, '0')}`
-
-  })
+    ).getDate()
 
 
 
-/* =========================
+  return `${selectedMonth.value}-${String(
 
-   AFFECTATIONS POUR AJOUT
+    lastDay
 
-\========================= */
+  ).padStart(2, '0')}`
+
+})
 
 
 
@@ -1528,7 +1612,7 @@ const availableAssignments =
 
     return employeePosts.value.filter(
 
-      (assignment) =>
+      assignment =>
 
         assignment.employee_id ===
 
@@ -1564,7 +1648,7 @@ const selectedAssignment =
 
       employeePosts.value.find(
 
-        (assignment) =>
+        assignment =>
 
           assignment.employee_id ===
 
@@ -1611,14 +1695,6 @@ const effectiveRate = (
   )
 
 }
-
-
-
-/* =========================
-
-   OUVRIR AJOUT
-
-\========================= */
 
 
 
@@ -1674,8 +1750,6 @@ const onNewEmployeeChange = () => {
 
   newVacationType.value = ''
 
-
-
   addVacationError.value = ''
 
   addVacationSuccess.value = ''
@@ -1719,14 +1793,6 @@ const onNewPostChange = () => {
   }
 
 }
-
-
-
-/* =========================
-
-   AJOUTER VACATION
-
-\========================= */
 
 
 
@@ -1792,9 +1858,7 @@ const addVacation = async () => {
 
 
 
-  let scheduledTime: string | null =
-
-    null
+  let scheduledTime: string | null = null
 
 
 
@@ -1896,8 +1960,6 @@ const addVacation = async () => {
 
 
 
-        // Date réelle de création par l'admin.
-
         punched_at:
 
           new Date().toISOString(),
@@ -1940,11 +2002,7 @@ const addVacation = async () => {
 
 
 
-    if (
-
-      error.code === '23505'
-
-    ) {
+    if (error.code === '23505') {
 
       addVacationError.value =
 
@@ -1972,14 +2030,6 @@ const addVacation = async () => {
 
 
 
-  /*
-
-    On affiche automatiquement
-
-    le mois de la vacation ajoutée.
-
-  */
-
   selectedMonth.value =
 
     newWorkDate.value.slice(0, 7)
@@ -2000,23 +2050,11 @@ const addVacation = async () => {
 
 
 
-/* =========================
-
-   CHARGEMENT
-
-\========================= */
-
-
-
 const loadData = async () => {
 
   loading.value = true
 
   errorMessage.value = ''
-
-
-
-  /* EMPLOYÉS */
 
 
 
@@ -2069,10 +2107,6 @@ const loadData = async () => {
   employees.value =
 
     (employeeData ?? []) as Employee[]
-
-
-
-  /* POSTES */
 
 
 
@@ -2144,10 +2178,6 @@ const loadData = async () => {
 
 
 
-  /* AFFECTATIONS */
-
-
-
   const {
 
     data: assignmentData,
@@ -2192,13 +2222,7 @@ const loadData = async () => {
 
   if (assignmentError) {
 
-    console.error(
-
-      'Erreur affectations :',
-
-      assignmentError
-
-    )
+    console.error(assignmentError)
 
 
 
@@ -2242,23 +2266,15 @@ const loadData = async () => {
 
         return {
 
-          id:
-
-            assignment.id,
-
-
+          id: assignment.id,
 
           employee_id:
 
             assignment.employee_id,
 
-
-
           post_id:
 
             assignment.post_id,
-
-
 
           custom_rate:
 
@@ -2272,19 +2288,13 @@ const loadData = async () => {
 
                 ),
 
-
-
           active:
 
             assignment.active,
 
-
-
           post: {
 
             ...post,
-
-
 
             base_rate:
 
@@ -2314,89 +2324,89 @@ const loadData = async () => {
 
 
 
-      /* ASTREINTES */
+  const {
+
+    data: onCallData,
+
+    error: onCallError,
+
+  } =
+
+    await supabase
+
+      .from('on_call_assignments')
+
+      .select(`
+
+        id,
+
+        employee_id,
+
+        post_id,
+
+        daily_rate,
+
+        started_on,
+
+        ended_on
+
+      `)
+
+      .lte(
+
+        'started_on',
+
+        monthEnd.value
+
+      )
+
+      .or(
+
+        `ended_on.is.null,ended_on.gte.${monthStart.value}`
+
+      )
 
 
 
-const {
+  if (onCallError) {
 
-  data: onCallData,
-
-  error: onCallError,
-
-} = await supabase
-
-  .from('on_call_assignments')
-
-  .select(`
-
-    id,
-
-    employee_id,
-
-    post_id,
-
-    daily_rate,
-
-    started_on,
-
-    ended_on
-
-  `)
-
-  .lte('started_on', monthEnd.value)
-
-  .or(`ended_on.is.null,ended_on.gte.${monthStart.value}`)
+    console.error(onCallError)
 
 
 
-if (onCallError) {
+    errorMessage.value =
 
-  console.error(
-
-    'Erreur astreintes :',
-
-    onCallError
-
-  )
+      'Impossible de charger les astreintes.'
 
 
 
-  errorMessage.value =
+    loading.value = false
 
-    'Impossible de charger les astreintes.'
+    return
 
-
-
-  loading.value = false
-
-  return
-
-}
+  }
 
 
 
-onCallAssignments.value =
+  onCallAssignments.value =
 
-  (onCallData ?? []).map(
+    (onCallData ?? []).map(
 
-    (assignment: any) => ({
+      (assignment: any) => ({
 
-      ...assignment,
+        ...assignment,
 
-      daily_rate: Number(
+        daily_rate:
 
-        assignment.daily_rate ?? 0
+          Number(
 
-      ),
+            assignment.daily_rate ?? 0
 
-    })
+          ),
 
-  ) as OnCallAssignment[]
+      })
 
-
-
-  /* POINTAGES */
+    ) as OnCallAssignment[]
 
 
 
@@ -2466,11 +2476,7 @@ onCallAssignments.value =
 
         'work_date',
 
-        {
-
-          ascending: false,
-
-        }
+        { ascending: false }
 
       )
 
@@ -2478,11 +2484,7 @@ onCallAssignments.value =
 
         'punched_at',
 
-        {
-
-          ascending: false,
-
-        }
+        { ascending: false }
 
       )
 
@@ -2490,13 +2492,7 @@ onCallAssignments.value =
 
   if (punchError) {
 
-    console.error(
-
-      'Erreur pointages :',
-
-      punchError
-
-    )
+    console.error(punchError)
 
 
 
@@ -2562,8 +2558,6 @@ onCallAssignments.value =
 
                 ...post,
 
-
-
                 base_rate:
 
                   Number(
@@ -2622,169 +2616,183 @@ const formatUtcDate = (date: Date) => {
 
 
 
-const onCallPunches = computed<Punch[]>(() => {
+/* ASTREINTE AUTOMATIQUE */
 
-  const result: Punch[] = []
+const onCallPunches =
 
+  computed<Punch[]>(() => {
 
+    const result: Punch[] = []
 
-  const todayDate = today.value
-
-
-
-  for (const assignment of onCallAssignments.value) {
-
-    const post = posts.value.find(
-
-      (item) => item.id === assignment.post_id
-
-    )
+    const todayDate = today.value
 
 
 
-    if (!post) continue
+    for (
+
+      const assignment
+
+      of onCallAssignments.value
+
+    ) {
+
+      const post =
+
+        posts.value.find(
+
+          item =>
+
+            item.id === assignment.post_id
+
+        )
 
 
 
-    const start =
-
-      assignment.started_on > monthStart.value
-
-        ? assignment.started_on
-
-        : monthStart.value
+      if (!post) continue
 
 
 
-    const assignmentEnd =
+      const start =
 
-      assignment.ended_on ?? todayDate
+        assignment.started_on >
 
+        monthStart.value
 
+          ? assignment.started_on
 
-    let end =
-
-      assignmentEnd < monthEnd.value
-
-        ? assignmentEnd
-
-        : monthEnd.value
+          : monthStart.value
 
 
 
-    // Ne jamais créer des jours futurs
+      const assignmentEnd =
 
-    if (end > todayDate) {
+        assignment.ended_on ??
 
-      end = todayDate
+        todayDate
+
+
+
+      let end =
+
+        assignmentEnd <
+
+        monthEnd.value
+
+          ? assignmentEnd
+
+          : monthEnd.value
+
+
+
+      if (end > todayDate) {
+
+        end = todayDate
+
+      }
+
+
+
+      if (start > end) continue
+
+
+
+      const current =
+
+        dateToUtc(start)
+
+
+
+      const last =
+
+        dateToUtc(end)
+
+
+
+      while (current <= last) {
+
+        const workDate =
+
+          formatUtcDate(current)
+
+
+
+        result.push({
+
+          id:
+
+            `on-call-${assignment.id}-${workDate}`,
+
+
+
+          employee_id:
+
+            assignment.employee_id,
+
+
+
+          post_id:
+
+            assignment.post_id,
+
+
+
+          vacation_type:
+
+            'astreinte',
+
+
+
+          work_date:
+
+            workDate,
+
+
+
+          scheduled_time:
+
+            null,
+
+
+
+          punched_at:
+
+            `${workDate}T00:00:00+02:00`,
+
+
+
+          applied_rate:
+
+            assignment.daily_rate,
+
+
+
+          status:
+
+            'validated',
+
+
+
+          post,
+
+        })
+
+
+
+        current.setUTCDate(
+
+          current.getUTCDate() + 1
+
+        )
+
+      }
 
     }
 
 
 
-    if (start > end) continue
+    return result
 
-
-
-    const current = dateToUtc(start)
-
-    const last = dateToUtc(end)
-
-
-
-    while (current <= last) {
-
-      const workDate =
-
-        formatUtcDate(current)
-
-
-
-      result.push({
-
-        id:
-
-          `on-call-${assignment.id}-${workDate}`,
-
-
-
-        employee_id:
-
-          assignment.employee_id,
-
-
-
-        post_id:
-
-          assignment.post_id,
-
-
-
-        vacation_type:
-
-          'astreinte',
-
-
-
-        work_date:
-
-          workDate,
-
-
-
-        scheduled_time:
-
-          null,
-
-
-
-        punched_at:
-
-          `${workDate}T00:00:00+02:00`,
-
-
-
-        applied_rate:
-
-          assignment.daily_rate,
-
-
-
-        status:
-
-          'validated',
-
-
-
-        post,
-
-      })
-
-
-
-      current.setUTCDate(
-
-        current.getUTCDate() + 1
-
-      )
-
-    }
-
-  }
-
-
-
-  return result
-
-})
-
-
-
-/* =========================
-
-   FILTRAGE
-
-\========================= */
+  })
 
 
 
@@ -2794,67 +2802,63 @@ const filteredPunches =
 
     return [
 
-        ...punches.value,
+      ...punches.value,
 
-        ...onCallPunches.value,
+      ...onCallPunches.value,
 
-    ].filter(
+    ].filter(punch => {
 
-      (punch) => {
+      if (
 
-        if (
+        selectedEmployeeId.value &&
 
-          selectedEmployeeId.value &&
+        punch.employee_id !==
 
-          punch.employee_id !==
+          selectedEmployeeId.value
 
-            selectedEmployeeId.value
+      ) {
 
-        ) {
-
-          return false
-
-        }
-
-
-
-        if (
-
-          selectedPostId.value &&
-
-          punch.post_id !==
-
-            selectedPostId.value
-
-        ) {
-
-          return false
-
-        }
-
-
-
-        if (
-
-          selectedStatus.value &&
-
-          punch.status !==
-
-            selectedStatus.value
-
-        ) {
-
-          return false
-
-        }
-
-
-
-        return true
+        return false
 
       }
 
-    )
+
+
+      if (
+
+        selectedPostId.value &&
+
+        punch.post_id !==
+
+          selectedPostId.value
+
+      ) {
+
+        return false
+
+      }
+
+
+
+      if (
+
+        selectedStatus.value &&
+
+        punch.status !==
+
+          selectedStatus.value
+
+      ) {
+
+        return false
+
+      }
+
+
+
+      return true
+
+    })
 
   })
 
@@ -2866,7 +2870,7 @@ const validFilteredPunches =
 
     return filteredPunches.value.filter(
 
-      (punch) =>
+      punch =>
 
         punch.status !== 'contested'
 
@@ -2882,11 +2886,17 @@ const totalAmount =
 
     return validFilteredPunches.value.reduce(
 
-      (total, punch) =>
+      (
+
+        total,
+
+        punch
+
+      ) =>
 
         total +
 
-        Number(punch.applied_rate),
+        Number(punch.applied_rate ?? 0),
 
       0
 
@@ -2896,51 +2906,19 @@ const totalAmount =
 
 
 
-/* =========================
-
-   RÉCAP EMPLOYÉS
-
-\========================= */
-
-
-
 const employeeSummaries =
 
   computed(() => {
 
     return employees.value
 
-      .filter((employee) => {
-
-        if (
-
-          selectedEmployeeId.value &&
-
-          employee.id !==
-
-            selectedEmployeeId.value
-
-        ) {
-
-          return false
-
-        }
-
-
-
-        return true
-
-      })
-
-
-
-      .map((employee) => {
+      .map(employee => {
 
         const employeePunches =
 
           filteredPunches.value.filter(
 
-            (punch) =>
+            punch =>
 
               punch.employee_id ===
 
@@ -2954,7 +2932,7 @@ const employeeSummaries =
 
           employeePunches.filter(
 
-            (punch) =>
+            punch =>
 
               punch.status !==
 
@@ -2964,93 +2942,73 @@ const employeeSummaries =
 
 
 
-        const vacationPunches =
+        const normalPunches =
 
           validPunches.filter(
 
-            (punch) =>
+            punch =>
 
-              punch.vacation_type !== 'astreinte'
+              punch.vacation_type !==
+
+              'astreinte'
 
           )
 
 
 
-        const onCallPunchesForEmployee =
+        const onCall =
 
           validPunches.filter(
 
-            (punch) =>
+            punch =>
 
-              punch.vacation_type === 'astreinte'
+              punch.vacation_type ===
+
+              'astreinte'
 
           )
 
 
 
-        const todayVacationCount =
+        const todayNormal =
 
-          vacationPunches.filter(
+          normalPunches.filter(
 
-            (punch) =>
+            punch =>
 
-              punch.work_date === today.value
+              punch.work_date ===
 
-          ).length
-
-
-
-        const todayOnCallCount =
-
-          onCallPunchesForEmployee.filter(
-
-            (punch) =>
-
-              punch.work_date === today.value
+              today.value
 
           ).length
 
 
 
-        const todayLabel =
+        const todayOnCall =
 
-          todayOnCallCount > 0 && todayVacationCount === 0
+          onCall.filter(
 
-            ? `${todayOnCallCount} astreinte${todayOnCallCount > 1 ? 's' : ''}`
+            punch =>
 
-            : todayOnCallCount > 0
+              punch.work_date ===
 
-              ? `${todayVacationCount} vac. • ${todayOnCallCount} astreinte${todayOnCallCount > 1 ? 's' : ''}`
+              today.value
 
-              : `${todayVacationCount} vac.`
-
-
-
-        const monthLabel =
-
-          onCallPunchesForEmployee.length > 0 && vacationPunches.length === 0
-
-            ? `${onCallPunchesForEmployee.length} j. astreinte`
-
-            : onCallPunchesForEmployee.length > 0
-
-              ? `${vacationPunches.length} vac. • ${onCallPunchesForEmployee.length} j. astreinte`
-
-              : `${vacationPunches.length} vac.`
+          ).length
 
 
 
-        const employeeAmount =
+        const total =
 
           validPunches.reduce(
 
-            (total, punch) =>
+            (sum, punch) =>
 
-              total +
+              sum +
 
               Number(
 
-                punch.applied_rate
+                punch.applied_rate ?? 0
 
               ),
 
@@ -3060,33 +3018,99 @@ const employeeSummaries =
 
 
 
-        const assignedPosts =
+        const postNames =
 
-          employeePosts.value.filter(
+          Array.from(
 
-            (assignment) =>
+            new Set(
 
-              assignment.employee_id ===
+              employeePunches.map(
 
-              employee.id &&
+                punch =>
 
-              assignment.active
+                  punch.post.service_type ===
+
+                  'on_call'
+
+                    ? 'Astreinte'
+
+                    : `${serviceLabel(
+
+                        punch.post.service_type
+
+                      )} · ${punch.post.site_name}`
+
+              )
+
+            )
 
           )
 
 
 
-        const postNames =
-  assignedPosts.map(
-    (assignment) =>
-      assignment.post.service_type === 'on_call'
-        ? 'Astreinte'
-        : `${serviceLabel(
-            assignment.post.service_type
-          )} · ${
-            assignment.post.site_name
-          }`
-  )
+        let todayLabel = '0 vac.'
+
+
+
+        if (
+
+          todayNormal > 0 &&
+
+          todayOnCall > 0
+
+        ) {
+
+          todayLabel =
+
+            `${todayNormal} vac. + ${todayOnCall} j. astreinte`
+
+        } else if (todayNormal > 0) {
+
+          todayLabel =
+
+            `${todayNormal} vac.`
+
+        } else if (todayOnCall > 0) {
+
+          todayLabel =
+
+            `${todayOnCall} j. astreinte`
+
+        }
+
+
+
+        let monthLabel =
+
+          `${normalPunches.length} vac.`
+
+
+
+        if (
+
+          normalPunches.length > 0 &&
+
+          onCall.length > 0
+
+        ) {
+
+          monthLabel =
+
+            `${normalPunches.length} vac. + ${onCall.length} j. astreinte`
+
+        } else if (
+
+          normalPunches.length === 0 &&
+
+          onCall.length > 0
+
+        ) {
+
+          monthLabel =
+
+            `${onCall.length} j. astreinte`
+
+        }
 
 
 
@@ -3108,21 +3132,9 @@ const employeeSummaries =
 
             employee.first_name
 
-              ?.charAt(0)
+              .charAt(0)
 
               .toUpperCase() || '?',
-
-
-
-          todayCount:
-
-            todayVacationCount + todayOnCallCount,
-
-
-
-          validCount:
-
-            validPunches.length,
 
 
 
@@ -3136,7 +3148,7 @@ const employeeSummaries =
 
           totalAmount:
 
-            employeeAmount,
+            total,
 
 
 
@@ -3158,25 +3170,15 @@ const employeeSummaries =
 
       })
 
-
-
       .filter(
 
-        (employee) =>
+        employee =>
 
           employee.punches.length > 0
 
       )
 
   })
-
-
-
-/* =========================
-
-   EMPLOYÉ
-
-\========================= */
 
 
 
@@ -3200,231 +3202,226 @@ const toggleEmployee = (
 
 
 
-/* =========================
+/* CONTESTER */
 
-   CONTESTER
+const contestPunch = (
+  punch: Punch
+) => {
+  if (
+    punch.status === 'contested' ||
+    punch.vacation_type === 'astreinte'
+  ) {
+    return
+  }
 
-\========================= */
+  punchToContest.value = punch
+}
+
+const closeContestModal = () => {
+  if (contestingPunch.value) {
+    return
+  }
+
+  punchToContest.value = null
+}
+
+const confirmContestPunch = async () => {
+  const punch = punchToContest.value
+
+  if (
+    !punch ||
+    punch.status === 'contested' ||
+    punch.vacation_type === 'astreinte'
+  ) {
+    return
+  }
+
+  contestingPunch.value = true
+  updatingPunchId.value = punch.id
+
+  const { error } =
+    await supabase
+      .from('punches')
+      .update({
+        status: 'contested',
+      })
+      .eq('id', punch.id)
+
+  contestingPunch.value = false
+  updatingPunchId.value = null
+
+  if (error) {
+    console.error(error)
+
+    window.alert(
+      'Impossible de contester cette vacation.'
+    )
+
+    return
+  }
+
+  punch.status = 'contested'
+  punchToContest.value = null
+}
 
 
 
-const contestPunch =
+/* RÉTABLIR */
 
-  async (
+const restorePunch = async (
 
-    punch: Punch
+  punch: Punch
 
-  ) => {
+) => {
 
-    const confirmed =
+  const confirmed =
 
-      window.confirm(
+    window.confirm(
 
-        `Contester la vacation ${vacationLabel(
+      `Rétablir la vacation ${vacationLabel(
 
-          punch.vacation_type
+        punch.vacation_type
 
-        )} du ${formatDate(
+      )} du ${formatDate(
 
-          punch.work_date
+        punch.work_date
 
-        )} ?`
+      )} ?`
+
+    )
+
+
+
+  if (!confirmed) return
+
+
+
+  updatingPunchId.value =
+
+    punch.id
+
+
+
+  const { error } =
+
+    await supabase
+
+      .from('punches')
+
+      .update({
+
+        status:
+
+          'validated',
+
+
+
+        anomaly_reason:
+
+          null,
+
+      })
+
+      .eq(
+
+        'id',
+
+        punch.id
 
       )
 
 
 
-    if (!confirmed) {
+  updatingPunchId.value =
 
-      return
-
-    }
+    null
 
 
 
-    updatingPunchId.value =
+  if (error) {
 
-      punch.id
-
-
-
-    const { error } =
-
-      await supabase
-
-        .from('punches')
-
-        .update({
-
-          status:
-
-            'contested',
-
-        })
-
-        .eq(
-
-          'id',
-
-          punch.id
-
-        )
+    console.error(error)
 
 
 
-    updatingPunchId.value =
+    window.alert(
 
-      null
+      'Impossible de rétablir cette vacation.'
 
-
-
-    if (error) {
-
-      console.error(error)
+    )
 
 
 
-      window.alert(
-
-        'Impossible de contester cette vacation.'
-
-      )
-
-
-
-      return
-
-    }
-
-
-
-    punch.status =
-
-      'contested'
+    return
 
   }
 
 
 
-/* =========================
+  punch.status =
 
-   RÉTABLIR
+    'validated'
 
-\========================= */
+}
 
 
 
-const restorePunch =
-
-  async (
-
-    punch: Punch
-
-  ) => {
-
-    const confirmed =
-
-      window.confirm(
-
-        `Rétablir la vacation ${vacationLabel(
-
-          punch.vacation_type
-
-        )} du ${formatDate(
-
-          punch.work_date
-
-        )} ?`
-
-      )
-
-
-
-    if (!confirmed) {
-
-      return
-
-    }
-
-
-
-    updatingPunchId.value =
-
-      punch.id
-
-
-
-    const { error } =
-
-      await supabase
-
-        .from('punches')
-
-        .update({
-
-          status:
-
-            'validated',
-
-
-
-          anomaly_reason:
-
-            null,
-
-        })
-
-        .eq(
-
-          'id',
-
-          punch.id
-
-        )
-
-
-
-    updatingPunchId.value =
-
-      null
-
-
-
-    if (error) {
-
-      console.error(error)
-
-
-
-      window.alert(
-
-        'Impossible de rétablir cette vacation.'
-
-      )
-
-
-
-      return
-
-    }
-
-
-
-    punch.status =
-
-      'validated'
-
+/* SUPPRIMER APRÈS CONTESTATION */
+const deletePunch = (punch: Punch) => {
+  if (
+    punch.status !== 'contested' ||
+    punch.vacation_type === 'astreinte'
+  ) {
+    return
   }
 
+  punchToDelete.value = punch
+}
 
+const closeDeleteModal = () => {
+  if (deletingPunch.value) {
+    return
+  }
 
-/* =========================
+  punchToDelete.value = null
+}
 
-   FORMATAGE
+const confirmDeletePunch = async () => {
+  const punch = punchToDelete.value
 
-\========================= */
+  if (
+    !punch ||
+    punch.status !== 'contested' ||
+    punch.vacation_type === 'astreinte'
+  ) {
+    return
+  }
 
+  deletingPunch.value = true
+  updatingPunchId.value = punch.id
 
+  const { error } = await supabase
+    .from('punches')
+    .delete()
+    .eq('id', punch.id)
+    .eq('status', 'contested')
+
+  deletingPunch.value = false
+  updatingPunchId.value = null
+
+  if (error) {
+    console.error(error)
+    errorMessage.value =
+      'Impossible de supprimer cette vacation.'
+    return
+  }
+
+  punches.value = punches.value.filter(
+    item => item.id !== punch.id
+  )
+
+  punchToDelete.value = null
+}
 
 const serviceLabel = (
 
@@ -3478,9 +3475,9 @@ const vacationLabel = (
 
   if (vacation === 'astreinte') {
 
-  return 'Astreinte'
+    return 'Astreinte'
 
-}
+  }
 
 
 
@@ -3514,9 +3511,9 @@ const vacationIcon = (
 
   if (vacation === 'astreinte') {
 
-  return '📞'
+    return '📞'
 
-}
+  }
 
 
 
@@ -3674,14 +3671,6 @@ const formatPunchTime = (
 
 
 
-/* =========================
-
-   CHANGEMENT MOIS
-
-\========================= */
-
-
-
 watch(
 
   selectedMonth,
@@ -3702,23 +3691,11 @@ watch(
 
 
 
-/* =========================
+onMounted(async () => {
 
-   DÉMARRAGE
+  await loadData()
 
-\========================= */
-
-
-
-onMounted(
-
-  async () => {
-
-    await loadData()
-
-  }
-
-)
+})
 
 </script>
 
@@ -4008,6 +3985,10 @@ h1 {
 
 
 
+/* CHOIX VACATION */
+
+
+
 .vacation-selector {
 
   display: grid;
@@ -4096,6 +4077,10 @@ h1 {
 
 
 
+/* MÉNAGE */
+
+
+
 .cleaning-info {
 
   display: flex;
@@ -4153,6 +4138,10 @@ h1 {
   font-size: 12px;
 
 }
+
+
+
+/* RÉCAP AJOUT */
 
 
 
@@ -4449,6 +4438,14 @@ h1 {
   font: inherit;
 
   font-size: 11px;
+
+}
+
+
+
+\#month {
+
+  width: 90px;
 
 }
 
@@ -4926,6 +4923,10 @@ h1 {
 
 
 
+/* CONTESTATION */
+
+
+
 .contested-message {
 
   margin-top: 11px;
@@ -4941,6 +4942,44 @@ h1 {
   font-size: 9px;
 
 }
+
+
+
+.contested-message-icon {
+
+  display: none;
+
+}
+
+
+
+.contested-message strong {
+
+  display: block;
+
+  margin-bottom: 2px;
+
+  color: #9c4f43;
+
+  font-size: 9px;
+
+}
+
+
+
+.contested-message p {
+
+  margin: 0;
+
+  color: #9c4f43;
+
+  font-size: 9px;
+
+}
+
+
+
+/* ACTIONS */
 
 
 
@@ -5010,6 +5049,282 @@ h1 {
 
 
 
+/* NOUVEAU : RÉTABLIR + SUPPRIMER */
+
+
+
+.contested-actions {
+
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns: 1fr 1fr;
+
+  gap: 8px;
+
+}
+
+
+
+.contested-actions .restore-button {
+
+  width: 100%;
+
+}
+
+
+
+.delete-button {
+
+  width: 100%;
+
+  min-height: 40px;
+
+
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+
+
+  border: 1px solid #e1b0a6;
+
+  border-radius: 12px;
+
+
+
+  background: #fff5f3;
+
+  color: #a84f40;
+
+
+
+  font: inherit;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+
+
+  cursor: pointer;
+
+}
+
+
+
+.delete-button:hover {
+
+  background: #f7dfda;
+
+}
+
+
+
+.delete-button:disabled {
+
+  opacity: 0.55;
+
+  cursor: wait;
+
+}
+
+
+
+.trash-icon {
+
+  font-size: 13px;
+
+  line-height: 1;
+
+}
+
+
+
+
+/* POPUP SUPPRESSION */
+
+.delete-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(23, 55, 47, 0.42);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.delete-modal {
+  width: 100%;
+  max-width: 390px;
+  padding: 25px;
+  border: 1px solid #eadfd8;
+  border-radius: 26px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(23, 55, 47, 0.2);
+  text-align: center;
+}
+
+.delete-modal-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  border-radius: 17px;
+  background: #f7dfda;
+  color: #a84f40;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.delete-modal-eyebrow {
+  margin: 0 0 5px;
+  color: #b46c55;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.delete-modal h2 {
+  margin: 0;
+  color: #17372f;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 23px;
+  font-weight: 400;
+}
+
+.delete-modal-description {
+  max-width: 290px;
+  margin: 9px auto 18px;
+  color: #8d8580;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.delete-modal-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  padding: 8px;
+  border-radius: 16px;
+  background: #f7f1ec;
+  text-align: left;
+}
+
+.delete-modal-info div {
+  min-width: 0;
+  padding: 8px;
+}
+
+.delete-modal-info span {
+  display: block;
+  margin-bottom: 4px;
+  color: #9b938d;
+  font-size: 8px;
+}
+
+.delete-modal-info strong {
+  display: block;
+  overflow: hidden;
+  color: #17372f;
+  font-size: 10px;
+  text-overflow: ellipsis;
+}
+
+.delete-modal-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 13px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: #fff5f3;
+  color: #a84f40;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.delete-modal-warning strong {
+  font-size: 9px;
+}
+
+.delete-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+  margin-top: 17px;
+}
+
+.modal-cancel-button,
+.modal-delete-button,
+.modal-contest-button {
+  min-height: 44px;
+  border-radius: 13px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.modal-cancel-button {
+  border: 0;
+  background: #f1ebe7;
+  color: #665d58;
+}
+
+.modal-delete-button {
+  border: 0;
+  background: #a84f40;
+  color: #ffffff;
+}
+
+.modal-contest-button {
+  border: 0;
+  background: #a84f40;
+  color: #ffffff;
+}
+
+.contest-modal-icon {
+  background: #f7dfda;
+  color: #a84f40;
+}
+
+.contest-modal-warning {
+  background: #fff5f3;
+  color: #a84f40;
+}
+
+.modal-cancel-button:hover {
+  background: #e9e1dc;
+}
+
+.modal-delete-button:hover,
+.modal-contest-button:hover {
+  background: #934336;
+}
+
+.modal-cancel-button:disabled,
+.modal-delete-button:disabled,
+.modal-contest-button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+/* MOBILE */
+
+
+
 @media (max-width: 480px) {
 
   .admin-hours-page {
@@ -5047,6 +5362,14 @@ h1 {
   .employee-stats {
 
     grid-template-columns: repeat(3, 1fr);
+
+  }
+
+
+
+  .contested-actions {
+
+    grid-template-columns: 1fr 1fr;
 
   }
 
