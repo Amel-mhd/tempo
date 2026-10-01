@@ -295,6 +295,7 @@ import AdminBottomNav
 type ServiceType =
   | 'security'
   | 'cleaning'
+  | 'on_call'
 
 type PunchStatus =
   | 'validated'
@@ -534,9 +535,19 @@ const postSummaries =
 const serviceLabel = (
   service: ServiceType
 ) => {
-  return service === 'security'
-    ? 'Sécurité'
-    : 'Ménage'
+  if (service === 'security') {
+    return 'Sécurité'
+  }
+
+  if (service === 'cleaning') {
+    return 'Ménage'
+  }
+
+  if (service === 'on_call') {
+    return 'Astreinte'
+  }
+
+  return service
 }
 
 const formatMoney = (
