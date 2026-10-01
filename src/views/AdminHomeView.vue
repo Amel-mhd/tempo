@@ -278,7 +278,6 @@ import {
 } from 'vue'
 
 import {
-  RouterLink,
   useRouter,
 } from 'vue-router'
 
@@ -320,45 +319,31 @@ interface Punch {
    BASE
 ========================= */
 
-const router =
-  useRouter()
+const router = useRouter()
 
-const loading =
-  ref(true)
+const loading = ref(true)
+const errorMessage = ref('')
 
-const errorMessage =
-  ref('')
+const firstName = ref('')
 
-const firstName =
-  ref('')
-
-const posts =
-  ref<Post[]>([])
-
-const monthPunches =
-  ref<Punch[]>([])
+const posts = ref<Post[]>([])
+const monthPunches = ref<Punch[]>([])
 
 /* =========================
    MOIS
 ========================= */
 
-const now =
-  new Date()
+const now = new Date()
 
-const selectedMonth =
-  ref(
-    `${now.getFullYear()}-${String(
-      now.getMonth() + 1
-    ).padStart(2, '0')}`
-  )
+const selectedMonth = ref(
+  `${now.getFullYear()}-${String(
+    now.getMonth() + 1
+  ).padStart(2, '0')}`
+)
 
 const selectedMonthLabel =
   computed(() => {
-
-    const [
-      year,
-      month,
-    ] =
+    const [year, month] =
       selectedMonth.value
         .split('-')
         .map(Number)
@@ -386,11 +371,7 @@ const selectedMonthLabel =
 
 const monthBounds =
   computed(() => {
-
-    const [
-      year,
-      month,
-    ] =
+    const [year, month] =
       selectedMonth.value
         .split('-')
         .map(Number)
@@ -406,10 +387,7 @@ const monthBounds =
       start:
         `${year}-${String(
           month
-        ).padStart(
-          2,
-          '0'
-        )}-01`,
+        ).padStart(2, '0')}-01`,
 
       end:
         `${year}-${String(
@@ -426,67 +404,50 @@ const monthBounds =
     }
   })
 
-const previousMonth =
-  () => {
+const previousMonth = () => {
+  const [year, month] =
+    selectedMonth.value
+      .split('-')
+      .map(Number)
 
-    const [
+  const date =
+    new Date(
+      year,
+      month - 2,
+      1
+    )
+
+  selectedMonth.value =
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, '0')}`
+}
+
+const nextMonth = () => {
+  const [year, month] =
+    selectedMonth.value
+      .split('-')
+      .map(Number)
+
+  const date =
+    new Date(
       year,
       month,
-    ] =
-      selectedMonth.value
-        .split('-')
-        .map(Number)
+      1
+    )
 
-    const date =
-      new Date(
-        year,
-        month - 2,
-        1
-      )
-
-    selectedMonth.value =
-      `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(
-        2,
-        '0'
-      )}`
-  }
-
-const nextMonth =
-  () => {
-
-    const [
-      year,
-      month,
-    ] =
-      selectedMonth.value
-        .split('-')
-        .map(Number)
-
-    const date =
-      new Date(
-        year,
-        month,
-        1
-      )
-
-    selectedMonth.value =
-      `${date.getFullYear()}-${String(
-        date.getMonth() + 1
-      ).padStart(
-        2,
-        '0'
-      )}`
-  }
+  selectedMonth.value =
+    `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, '0')}`
+}
 
 /* =========================
-   ADMIN
+   ADMIN / OWNER
 ========================= */
 
 const adminInitial =
   computed(() => {
-
     return (
       firstName.value
         ?.charAt(0)
@@ -494,29 +455,27 @@ const adminInitial =
       'A'
     )
   })
+
 /* =========================
    VACATIONS VALIDES
 ========================= */
 
 const validMonthPunches =
   computed(() => {
-
     return monthPunches.value.filter(
       (punch) =>
-        punch.status !==
-        'contested'
+        punch.status !== 'contested'
     )
   })
+
 /* =========================
    MONTANTS
 ========================= */
 
 const monthAmount =
   computed(() => {
-
     return validMonthPunches.value.reduce(
       (total, punch) => {
-
         return (
           total +
           Number(
@@ -527,16 +486,15 @@ const monthAmount =
       0
     )
   })
+
 /* =========================
    RÉPARTITION PAR POSTE
 ========================= */
 
 const postSummaries =
   computed(() => {
-
     return posts.value.map(
       (post) => {
-
         const postPunches =
           validMonthPunches.value.filter(
             (punch) =>
@@ -547,7 +505,6 @@ const postSummaries =
         const amount =
           postPunches.reduce(
             (total, punch) => {
-
               return (
                 total +
                 Number(
@@ -574,65 +531,47 @@ const postSummaries =
    FORMATAGE
 ========================= */
 
-const serviceLabel =
-  (
-    service:
-      ServiceType
-  ) => {
+const serviceLabel = (
+  service: ServiceType
+) => {
+  return service === 'security'
+    ? 'Sécurité'
+    : 'Ménage'
+}
 
-    return service ===
-      'security'
-        ? 'Sécurité'
-        : 'Ménage'
-  }
-
-const formatMoney =
-  (
-    value:
-      number
-  ) => {
-
-    return new Intl.NumberFormat(
-      'fr-FR',
-      {
-        style:
-          'currency',
-
-        currency:
-          'EUR',
-      }
-    ).format(
-      Number(
-        value ?? 0
-      )
-    )
-  }
+const formatMoney = (
+  value: number
+) => {
+  return new Intl.NumberFormat(
+    'fr-FR',
+    {
+      style: 'currency',
+      currency: 'EUR',
+    }
+  ).format(
+    Number(value ?? 0)
+  )
+}
 
 /* =========================
    CHARGEMENT DES DONNÉES
 ========================= */
 
-const loadData =
-  async () => {
+const loadData = async () => {
+  loading.value = true
+  errorMessage.value = ''
 
-    loading.value =
-      true
+  const {
+    start,
+    end,
+  } = monthBounds.value
 
-    errorMessage.value =
-      ''
-
-    const {
-      start,
-      end,
-    } =
-      monthBounds.value
-
+  try {
     const [
       postsResult,
       punchesResult,
     ] =
       await Promise.all([
-
         supabase
           .from('posts')
           .select(`
@@ -666,15 +605,9 @@ const loadData =
             'work_date',
             end
           ),
-
       ])
 
-    /* POSTES */
-
-    if (
-      postsResult.error
-    ) {
-
+    if (postsResult.error) {
       console.error(
         'Erreur postes :',
         postsResult.error
@@ -683,18 +616,10 @@ const loadData =
       errorMessage.value =
         'Impossible de charger les postes.'
 
-      loading.value =
-        false
-
       return
     }
 
-    /* POINTAGES */
-
-    if (
-      punchesResult.error
-    ) {
-
+    if (punchesResult.error) {
       console.error(
         'Erreur pointages :',
         punchesResult.error
@@ -703,45 +628,33 @@ const loadData =
       errorMessage.value =
         'Impossible de charger les pointages.'
 
-      loading.value =
-        false
-
       return
     }
 
-    posts.value =
-      (postsResult.data ??
-        []) as Post[]
+    posts.value = (postsResult.data ?? []) as Post[]
 
-    /*
-      Si une ancienne vacation possède
-      encore un ancien statut,
-      seule "contested" est exclue.
-    */
+    monthPunches.value = (punchesResult.data ?? []).map(
+  (punch: any) => ({
+    ...punch,
+    applied_rate: Number(punch.applied_rate ?? 0),
+    status:
+      punch.status === 'contested'
+        ? 'contested'
+        : 'validated',
+  })
+) as Punch[]
+  } catch (error) {
+    console.error(
+      'Erreur chargement dashboard :',
+      error
+    )
 
-    monthPunches.value =
-      (punchesResult.data ??
-        []).map(
-          (punch: any) => ({
-            ...punch,
-
-            applied_rate:
-              Number(
-                punch.applied_rate ??
-                0
-              ),
-
-            status:
-              punch.status ===
-              'contested'
-                ? 'contested'
-                : 'validated',
-          })
-        ) as Punch[]
-
-    loading.value =
-      false
+    errorMessage.value =
+      'Une erreur est survenue pendant le chargement.'
+  } finally {
+    loading.value = false
   }
+}
 
 /* =========================
    CHANGEMENT DE MOIS
@@ -758,32 +671,31 @@ watch(
    DÉMARRAGE
 ========================= */
 
-onMounted(
-  async () => {
+onMounted(async () => {
+  loading.value = true
+  errorMessage.value = ''
 
+  try {
     const {
       data: {
         user,
       },
+      error: userError,
     } =
       await supabase.auth
         .getUser()
 
-    if (!user) {
-
-      await router.push(
-        '/'
-      )
-
+    if (
+      userError ||
+      !user
+    ) {
+      await router.push('/')
       return
     }
 
     const {
-      data:
-        adminProfile,
-
-      error:
-        adminError,
+      data: adminProfile,
+      error: adminError,
     } =
       await supabase
         .from('profiles')
@@ -799,15 +711,27 @@ onMounted(
 
     if (
       adminError ||
-      !adminProfile ||
-      adminProfile.role !==
-        'admin'
+      !adminProfile
     ) {
-
-      await router.push(
-        '/home'
+      console.error(
+        'Erreur profil :',
+        adminError
       )
 
+      await supabase.auth
+        .signOut()
+
+      await router.push('/')
+
+      return
+    }
+
+    const hasAdminAccess =
+      adminProfile.role === 'admin' ||
+      adminProfile.role === 'owner'
+
+    if (!hasAdminAccess) {
+      await router.push('/home')
       return
     }
 
@@ -816,8 +740,18 @@ onMounted(
       ''
 
     await loadData()
+  } catch (error) {
+    console.error(
+      'Erreur initialisation admin :',
+      error
+    )
+
+    errorMessage.value =
+      'Impossible de charger le tableau de bord.'
+
+    loading.value = false
   }
-)
+})
 </script>
 
 <style scoped>

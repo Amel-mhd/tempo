@@ -1,6 +1,5 @@
 <template>
   <main class="profile-page">
-
     <section class="page-shell">
 
       <!-- HEADER -->
@@ -14,13 +13,12 @@
         </h1>
 
         <p class="subtitle">
-          Gérez votre compte administrateur Tempo.
+          Gérez votre compte Tempo.
         </p>
       </header>
 
       <!-- PROFIL -->
       <section class="profile-card">
-
         <div class="avatar">
           {{ initial }}
         </div>
@@ -30,13 +28,15 @@
             {{ fullName }}
           </h2>
 
-          <span class="role-badge">
-            Administratrice
+          <span
+            class="role-badge"
+            :class="{ owner: isOwner }"
+          >
+            {{ roleLabel }}
           </span>
         </div>
 
         <div class="info-list">
-
           <article>
             <span>
               Prénom
@@ -73,17 +73,14 @@
             </span>
 
             <strong>
-              Administratrice
+              {{ roleLabel }}
             </strong>
           </article>
-
         </div>
-
       </section>
 
       <!-- COMPTE -->
       <section class="settings-card">
-
         <div class="settings-title">
           <p class="eyebrow">
             Compte
@@ -94,7 +91,12 @@
           </h2>
         </div>
 
+        <!--
+          SEUL LE OWNER PEUT UTILISER
+          CETTE OPTION DANS TEMPO
+        -->
         <button
+          v-if="isOwner"
           type="button"
           class="setting-button"
           :disabled="sendingPasswordEmail"
@@ -132,17 +134,20 @@
         <button
           type="button"
           class="logout-button"
+          :disabled="loggingOut"
           @click="logout"
         >
-          Se déconnecter
+          {{
+            loggingOut
+              ? 'Déconnexion...'
+              : 'Se déconnecter'
+          }}
         </button>
-
       </section>
 
     </section>
 
     <AdminBottomNav />
-
   </main>
 </template>
 
@@ -164,19 +169,23 @@ import {
 import AdminBottomNav
   from '../components/AdminBottomNav.vue'
 
-const router =
-  useRouter()
+type AdminRole =
+  | 'admin'
+  | 'owner'
 
-const firstName =
-  ref('')
+const router = useRouter()
 
-const lastName =
-  ref('')
+const firstName = ref('')
+const lastName = ref('')
+const email = ref('')
 
-const email =
-  ref('')
+const role =
+  ref<AdminRole>('admin')
 
 const sendingPasswordEmail =
+  ref(false)
+
+const loggingOut =
   ref(false)
 
 const successMessage =
@@ -186,20 +195,42 @@ const errorMessage =
   ref('')
 
 /* =========================
+   OWNER
+========================= */
+
+const isOwner =
+  computed(() => {
+    return role.value === 'owner'
+  })
+
+/* =========================
+   LIBELLÉ DU RÔLE
+========================= */
+
+const roleLabel =
+  computed(() => {
+    return isOwner.value
+      ? 'Propriétaire'
+      : 'Administratrice'
+  })
+
+/* =========================
    NOM COMPLET
 ========================= */
 
 const fullName =
   computed(() => {
-
     const value =
       `${firstName.value} ${lastName.value}`
         .trim()
 
-    return (
-      value ||
-      'Administratrice Tempo'
-    )
+    if (value) {
+      return value
+    }
+
+    return isOwner.value
+      ? 'Propriétaire Tempo'
+      : 'Administratrice Tempo'
   })
 
 /* =========================
@@ -208,7 +239,6 @@ const fullName =
 
 const initial =
   computed(() => {
-
     return (
       firstName.value ||
       email.value ||
@@ -222,19 +252,24 @@ const initial =
    CHARGEMENT DU PROFIL
 ========================= */
 
-onMounted(
-  async () => {
+onMounted(async () => {
+  errorMessage.value = ''
 
+  try {
     const {
       data: {
         user,
       },
+      error: userError,
     } =
       await supabase.auth
         .getUser()
 
-    if (!user) {
-      await router.push('/')
+    if (
+      userError ||
+      !user
+    ) {
+      await router.replace('/')
       return
     }
 
@@ -260,27 +295,59 @@ onMounted(
 
     if (
       error ||
-      !profile ||
-      profile.role !== 'admin'
+      !profile
     ) {
-      await router.push('/home')
+      console.error(
+        'Erreur profil :',
+        error
+      )
+
+      await supabase.auth
+        .signOut()
+
+      await router.replace('/')
+
       return
     }
+
+    const hasAdminAccess =
+      profile.role === 'admin' ||
+      profile.role === 'owner'
+
+    if (!hasAdminAccess) {
+      await router.replace('/home')
+      return
+    }
+
+    role.value =
+      profile.role as AdminRole
 
     firstName.value =
       profile.first_name ?? ''
 
     lastName.value =
       profile.last_name ?? ''
+  } catch (error) {
+    console.error(
+      'Erreur chargement profil :',
+      error
+    )
+
+    errorMessage.value =
+      'Impossible de charger votre profil.'
   }
-)
+})
 
 /* =========================
    MOT DE PASSE
+   OWNER UNIQUEMENT
 ========================= */
 
 const changePassword =
   async () => {
+    if (!isOwner.value) {
+      return
+    }
 
     if (
       !email.value ||
@@ -292,26 +359,37 @@ const changePassword =
     sendingPasswordEmail.value =
       true
 
-    successMessage.value =
-      ''
+    successMessage.value = ''
+    errorMessage.value = ''
 
-    errorMessage.value =
-      ''
+    try {
+      const {
+        error,
+      } =
+        await supabase.auth
+          .resetPasswordForEmail(
+            email.value,
+            {
+              redirectTo:
+                `${window.location.origin}/reset-password`,
+            }
+          )
 
-    const {
-      error,
-    } =
-      await supabase.auth
-        .resetPasswordForEmail(
-          email.value,
-          {
-            redirectTo:
-              `${window.location.origin}/reset-password`,
-          }
+      if (error) {
+        console.error(
+          'Erreur mot de passe :',
+          error
         )
 
-    if (error) {
+        errorMessage.value =
+          'Impossible d’envoyer l’e-mail pour le moment.'
 
+        return
+      }
+
+      successMessage.value =
+        'Un e-mail de réinitialisation vient de vous être envoyé.'
+    } catch (error) {
       console.error(
         'Erreur mot de passe :',
         error
@@ -319,18 +397,10 @@ const changePassword =
 
       errorMessage.value =
         'Impossible d’envoyer l’e-mail pour le moment.'
-
+    } finally {
       sendingPasswordEmail.value =
         false
-
-      return
     }
-
-    successMessage.value =
-      'Un e-mail de réinitialisation vient de vous être envoyé.'
-
-    sendingPasswordEmail.value =
-      false
   }
 
 /* =========================
@@ -339,11 +409,45 @@ const changePassword =
 
 const logout =
   async () => {
+    if (loggingOut.value) {
+      return
+    }
 
-    await supabase.auth
-      .signOut()
+    loggingOut.value = true
+    errorMessage.value = ''
 
-    await router.push('/')
+    try {
+      const {
+        error,
+      } =
+        await supabase.auth
+          .signOut()
+
+      if (error) {
+        console.error(
+          'Erreur déconnexion :',
+          error
+        )
+
+        errorMessage.value =
+          'Impossible de vous déconnecter.'
+
+        return
+      }
+
+      await router.replace('/')
+    } catch (error) {
+      console.error(
+        'Erreur déconnexion :',
+        error
+      )
+
+      errorMessage.value =
+        'Impossible de vous déconnecter.'
+    } finally {
+      loggingOut.value =
+        false
+    }
   }
 </script>
 
@@ -530,6 +634,14 @@ const logout =
     700;
 }
 
+.role-badge.owner {
+  background:
+    #f1e3dc;
+
+  color:
+    #9a513c;
+}
+
 /* INFORMATIONS */
 
 .info-list {
@@ -684,7 +796,8 @@ const logout =
     23px;
 }
 
-.setting-button:disabled {
+.setting-button:disabled,
+.logout-button:disabled {
   opacity:
     0.6;
 
@@ -758,7 +871,6 @@ const logout =
 @media (
   max-width: 600px
 ) {
-
   .profile-page {
     padding:
       24px
