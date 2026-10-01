@@ -4432,7 +4432,7 @@ h1 {
 
 .filter-field select {
 
-  width: 100%;
+  width: 90%;
 
   min-height: 44px;
 
