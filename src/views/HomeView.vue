@@ -405,11 +405,9 @@
                   class="punch-button"
 
                   :disabled="
-
+                    !isSecurityPunchOpen('midi') ||
                     punchingKey ===
-
                     `${assignment.post.id}-midi`
-
                   "
 
                   @click="
@@ -428,13 +426,12 @@
 
                   {{
 
-                    punchingKey ===
-
-                    `${assignment.post.id}-midi`
-
-                      ? 'Pointage...'
-
-                      : 'Pointer'
+                    !isSecurityPunchOpen('midi')
+                      ? `Disponible à ${securityPunchOpeningTime('midi')}`
+                      : punchingKey ===
+                        `${assignment.post.id}-midi`
+                        ? 'Pointage...'
+                        : 'Pointer'
 
                   }}
 
@@ -565,11 +562,9 @@
                   class="punch-button"
 
                   :disabled="
-
+                    !isSecurityPunchOpen('soir') ||
                     punchingKey ===
-
                     `${assignment.post.id}-soir`
-
                   "
 
                   @click="
@@ -588,13 +583,12 @@
 
                   {{
 
-                    punchingKey ===
-
-                    `${assignment.post.id}-soir`
-
-                      ? 'Pointage...'
-
-                      : 'Pointer'
+                    !isSecurityPunchOpen('soir')
+                      ? `Disponible à ${securityPunchOpeningTime('soir')}`
+                      : punchingKey ===
+                        `${assignment.post.id}-soir`
+                        ? 'Pointage...'
+                        : 'Pointer'
 
                   }}
 
@@ -1303,6 +1297,51 @@ const hasPunched = (
 
 
 
+const securityPunchOpeningTime = (
+  vacationType: VacationType
+) => {
+  if (vacationType === 'midi') {
+    return '11h30'
+  }
+
+  if (vacationType === 'soir') {
+    return '18h30'
+  }
+
+  return ''
+}
+
+const isSecurityPunchOpen = (
+  vacationType: VacationType
+) => {
+  const parisTime =
+    new Intl.DateTimeFormat(
+      'fr-FR',
+      {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Europe/Paris',
+      }
+    ).format(new Date())
+
+  const [hour, minute] =
+    parisTime.split(':').map(Number)
+
+  const currentMinutes =
+    hour * 60 + minute
+
+  if (vacationType === 'midi') {
+    return currentMinutes >= 11 * 60 + 30
+  }
+
+  if (vacationType === 'soir') {
+    return currentMinutes >= 18 * 60 + 30
+  }
+
+  return true
+}
+
 const punchTime = (
 
   punch: Punch
@@ -1979,13 +2018,18 @@ const punch = async (
 
 
     if (
-
       error.message.includes(
-
-        'ALREADY_PUNCHED'
-
+        'PUNCH_NOT_OPEN_YET'
       )
-
+    ) {
+      errorMessage.value =
+        vacationType === 'midi'
+          ? 'Le pointage Midi ouvre à 11h30.'
+          : 'Le pointage Soir ouvre à 18h30.'
+    } else if (
+      error.message.includes(
+        'ALREADY_PUNCHED'
+      )
     ) {
 
       errorMessage.value =
