@@ -810,7 +810,7 @@
 
                 <strong>
 
-                  {{ employee.todayCount }} vac.
+                  {{ employee.todayLabel }}
 
                 </strong>
 
@@ -824,7 +824,7 @@
 
                 <strong>
 
-                  {{ employee.validCount }} vac.
+                  {{ employee.monthLabel }}
 
                 </strong>
 
@@ -948,11 +948,15 @@
 
                   <div>
 
-                    <span>Vacation</span>
+                    <span>
+
+                      {{ punch.vacation_type === 'astreinte' ? 'Astreinte' : 'Vacation' }}
+
+                    </span>
 
 
 
-                    <strong>
+                    <strong v-if="punch.vacation_type !== 'astreinte'">
 
                       {{ vacationLabel(punch.vacation_type) }}
 
@@ -1022,7 +1026,15 @@
 
                   <strong>
 
-                    {{ formatPunchTime(punch.punched_at) }}
+                    {{
+
+                      punch.vacation_type === 'astreinte'
+
+                        ? 'Automatique'
+
+                        : formatPunchTime(punch.punched_at)
+
+                    }}
 
                   </strong>
 
@@ -2958,17 +2970,79 @@ const employeeSummaries =
 
 
 
-        const todayCount =
+        const vacationPunches =
 
           validPunches.filter(
 
             (punch) =>
 
-              punch.work_date ===
+              punch.vacation_type !== 'astreinte'
 
-              today.value
+          )
+
+
+
+        const onCallPunchesForEmployee =
+
+          validPunches.filter(
+
+            (punch) =>
+
+              punch.vacation_type === 'astreinte'
+
+          )
+
+
+
+        const todayVacationCount =
+
+          vacationPunches.filter(
+
+            (punch) =>
+
+              punch.work_date === today.value
 
           ).length
+
+
+
+        const todayOnCallCount =
+
+          onCallPunchesForEmployee.filter(
+
+            (punch) =>
+
+              punch.work_date === today.value
+
+          ).length
+
+
+
+        const todayLabel =
+
+          todayOnCallCount > 0 && todayVacationCount === 0
+
+            ? `${todayOnCallCount} astreinte${todayOnCallCount > 1 ? 's' : ''}`
+
+            : todayOnCallCount > 0
+
+              ? `${todayVacationCount} vac. • ${todayOnCallCount} astreinte${todayOnCallCount > 1 ? 's' : ''}`
+
+              : `${todayVacationCount} vac.`
+
+
+
+        const monthLabel =
+
+          onCallPunchesForEmployee.length > 0 && vacationPunches.length === 0
+
+            ? `${onCallPunchesForEmployee.length} j. astreinte`
+
+            : onCallPunchesForEmployee.length > 0
+
+              ? `${vacationPunches.length} vac. • ${onCallPunchesForEmployee.length} j. astreinte`
+
+              : `${vacationPunches.length} vac.`
 
 
 
@@ -3052,13 +3126,23 @@ const employeeSummaries =
 
 
 
-          todayCount,
+          todayCount:
+
+            todayVacationCount + todayOnCallCount,
 
 
 
           validCount:
 
             validPunches.length,
+
+
+
+          todayLabel,
+
+
+
+          monthLabel,
 
 
 
