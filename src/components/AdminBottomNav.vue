@@ -16,6 +16,21 @@
       <span>Heures</span>
     </RouterLink>
 
+    <RouterLink to="/admin/calendrier" class="admin-nav-item">
+     <svg class="admin-nav-icon" viewBox="0 0 24 24">
+       <rect x="3" y="5" width="18" height="16" rx="2" />
+       <path d="M7 3v4" />
+       <path d="M17 3v4" />
+       <path d="M3 10h18" />
+       <path d="M8 14h.01" />
+       <path d="M12 14h.01" />
+       <path d="M16 14h.01" />
+       <path d="M8 17h.01" />
+       <path d="M12 17h.01" />
+       </svg>
+     <span>Calendrier</span>
+    </RouterLink>
+
     <RouterLink to="/admin/equipe" class="admin-nav-item">
       <svg class="admin-nav-icon" viewBox="0 0 24 24">
         <circle cx="9" cy="8" r="3" />
@@ -52,7 +67,7 @@
   transform: translateX(-50%);
 
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 
   padding: 8px;
   box-sizing: border-box;

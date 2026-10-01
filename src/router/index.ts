@@ -16,6 +16,7 @@ import AdminHomeView from '../views/AdminHomeView.vue'
 import AdminTeamView from '../views/AdminTeamView.vue'
 import AdminProfileView from '../views/AdminProfileView.vue'
 import AdminHoursView from '../views/AdminHoursView.vue'
+import AdminMonthView from '../views/AdminMonthView.vue'
 
 import { supabase } from '../lib/supabase'
 
@@ -88,6 +89,13 @@ const router = createRouter({
       path: '/admin/heures',
       name: 'admin-hours',
       component: AdminHoursView,
+      meta: { role: 'admin' },
+    },
+
+    {
+      path: '/admin/calendrier',
+      name: 'admin-month',
+      component: AdminMonthView,
       meta: { role: 'admin' },
     },
 
