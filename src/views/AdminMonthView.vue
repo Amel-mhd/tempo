@@ -136,7 +136,7 @@
               <div v-for="punch in punchesForEmployee(employee.id)" :key="punch.id" class="vacation-row">
                 <div class="vacation-main">
                   <strong>{{ postLabel(punch.post_id) }}</strong>
-                  <span>{{ vacationLabel(punch.vacation_type) }}</span>
+                  <span>{{ vacationLabel(punch.vacation_type) }} · Pointé à {{ formatPunchTime(punch.punched_at) }}</span>
                 </div>
                 <div class="vacation-price">{{ formatMoney(punch.applied_rate) }}</div>
               </div>
@@ -209,6 +209,7 @@ type Punch = {
   post_id: string
   vacation_type: string
   work_date: string
+  punched_at: string
   applied_rate: number | string | null
   status: 'validated' | 'contested' | string
 }
@@ -553,6 +554,16 @@ const vacationLabel = (type: string) => {
   return 'Vacation'
 }
 
+const formatPunchTime = (value: string) => {
+  if (!value) return '--:--'
+
+  return new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value))
+}
+
 const formatMoney = (value: number | string | null) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -625,7 +636,7 @@ const loadMonth = async () => {
 
       .from('punches')
 
-      .select('id, employee_id, post_id, vacation_type, work_date, applied_rate, status')
+      .select('id, employee_id, post_id, vacation_type, work_date, punched_at, applied_rate, status')
 
       .gte('work_date', monthStart.value)
 
