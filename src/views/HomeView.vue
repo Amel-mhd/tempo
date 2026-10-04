@@ -63,9 +63,13 @@
           {{
 
             todayPunches.length > 0
+
             ? 'Pointage enregistré'
+
             : todayOnCallAmount > 0
+
               ? 'Astreinte automatique active'
+
               : 'Aucun pointage pour le moment'
 
           }}
@@ -202,7 +206,7 @@
 
                   formatMoney(
 
-                    effectiveRate(assignment)
+                    displayedRate(assignment)
 
                   )
 
@@ -559,83 +563,94 @@
               </div>
 
                 <div class="shift-info">
+                  <template v-if="isPortSaintLouis(assignment)">
+                    <span>Présence ménage</span>
+                    <strong v-if="portSaintLouisSchedule">
+                      {{ portSaintLouisSchedule.hours }} h prévues
+                    </strong>
+                    <strong v-else>
+                      Aucune intervention aujourd’hui
+                    </strong>
+                    <small v-if="portSaintLouisSchedule">
+                      15,00 € / heure · {{ formatMoney(portSaintLouisSchedule.amount) }}
+                    </small>
+                  </template>
 
-                  <span v-if="assignment.post.site_name !== 'Astreinte'">Vacation ménage</span>
+                  <template v-else>
+                    <span v-if="assignment.post.site_name !== 'Astreinte'">Vacation ménage</span>
+                    <strong v-if="assignment.post.site_name !== 'Astreinte'">Ménage</strong>
+                    <small>
+                      {{ formatMoney(effectiveRate(assignment)) }}
+                      {{ assignment.post.site_name === 'Astreinte' ? 'par jour' : 'par vacation' }}
+                    </small>
+                  </template>
 
-                <strong v-if="assignment.post.site_name !== 'Astreinte'">Ménage</strong>
-
-                  <small>
-
-                    {{ formatMoney(effectiveRate(assignment)) }}
-
-                  {{ assignment.post.site_name === 'Astreinte' ? 'par jour' : 'par vacation' }}
-
-                  </small>
-
-                  <small
-
-                    v-if="getPunch(assignment.post.id, 'jour')"
-
-                  >
-
-                    Dernier pointage aujourd’hui :
-
+                  <small v-if="getPunch(assignment.post.id, 'jour')">
                     {{
-
-                      punchTime(
-
-                        getPunch(
-
-                          assignment.post.id,
-
-                          'jour'
-
-                        )!
-
-                      )
-
+                      isPortSaintLouis(assignment)
+                        ? 'Présence validée à :'
+                        : 'Dernier pointage aujourd’hui :'
                     }}
-
+                    {{
+                      punchTime(
+                        getPunch(
+                          assignment.post.id,
+                          'jour'
+                        )!
+                      )
+                    }}
                   </small>
-
                 </div>
-
               </div>
 
-              <button v-if="assignment.post.site_name !== 'Astreinte'"
+              <template v-if="assignment.post.site_name !== 'Astreinte'">
+                <div
+                  v-if="isPortSaintLouis(assignment) && getPunch(assignment.post.id, 'jour')"
+                  class="punched-state"
+                >
+                  <span>✓ Présence validée</span>
+                </div>
 
-  type="button"
+                <button
+                  v-else-if="isPortSaintLouis(assignment)"
+                  type="button"
+                  class="punch-button"
+                  :disabled="
+                    !portSaintLouisSchedule ||
+                    punchingKey === `${assignment.post.id}-jour`
+                  "
+                  @click="punch(assignment, 'jour')"
+                >
+                  {{
+                    !portSaintLouisSchedule
+                      ? 'Disponible mercredi et dimanche'
+                      : punchingKey === `${assignment.post.id}-jour`
+                        ? 'Validation...'
+                        : 'Valider ma présence'
+                  }}
+                </button>
 
-  class="punch-button"
+                <button
+                  v-else
+                  type="button"
+                  class="punch-button"
+                  :disabled="
+                    !isCleaningPunchOpen(assignment.post.site_name) ||
+                    punchingKey === `${assignment.post.id}-jour`
+                  "
+                  @click="punch(assignment, 'jour')"
+                >
+                  {{
+                    !isCleaningPunchOpen(assignment.post.site_name)
+                      ? 'Disponible à 00h00'
+                      : punchingKey === `${assignment.post.id}-jour`
+                        ? 'Pointage...'
+                        : 'Pointer'
+                  }}
+                </button>
+              </template>
 
-  :disabled="
-
-    !isCleaningPunchOpen(assignment.post.site_name) ||
-
-    punchingKey === `${assignment.post.id}-jour`
-
-  "
-
-  @click="punch(assignment, 'jour')"
-
->
-
-  {{
-
-    !isCleaningPunchOpen(assignment.post.site_name)
-
-      ? 'Disponible à 00h00'
-
-      : punchingKey === `${assignment.post.id}-jour`
-
-        ? 'Pointage...'
-
-        : 'Pointer'
-
-  }}
-
-</button>
-            <span v-else class="automatic-badge">AUTOMATIQUE</span>
+              <span v-else class="automatic-badge">AUTOMATIQUE</span>
 
             </article>
 
@@ -814,12 +829,19 @@ interface Assignment {
 }
 
 interface OnCallAssignment {
+
   id: string
+
   employee_id: string
+
   post_id: string
+
   daily_rate: number
+
   started_on: string
+
   ended_on: string | null
+
 }
 
 interface Punch {
@@ -865,6 +887,7 @@ const assignments =
 const monthPunches =
 
   ref<Punch[]>([])
+
 const onCallAssignments = ref<OnCallAssignment[]>([])
 
 const loading = ref(true)
@@ -881,7 +904,7 @@ const successMessage = ref('')
 
    DATES
 
-\\\========================= */
+\\\\\========================= */
 
 const now = new Date()
 
@@ -955,7 +978,7 @@ const monthEnd =
 
    LABELS
 
-\\\========================= */
+\\\\\========================= */
 
 const initial =
 
@@ -1065,30 +1088,63 @@ const effectiveRate = (
 
 }
 
+const isPortSaintLouis = (assignment: Assignment) =>
+  assignment.post.site_name === 'Port-Saint-Louis'
+
+const portSaintLouisSchedule = computed(() => {
+  const day = now.getDay()
+
+  if (day === 3) return { hours: 2, hourlyRate: 15, amount: 30 }
+  if (day === 0) return { hours: 1, hourlyRate: 15, amount: 15 }
+
+  return null
+})
+
+const displayedRate = (assignment: Assignment) => {
+  if (isPortSaintLouis(assignment)) {
+    return portSaintLouisSchedule.value?.amount ?? 0
+  }
+  return effectiveRate(assignment)
+}
+
+
 const onCallRateForDate = (date: string) => {
+
   if (!date || date > today) return 0
+
   return onCallAssignments.value
+
     .filter(a => a.started_on <= date && (!a.ended_on || a.ended_on >= date))
+
     .reduce((total, a) => total + Number(a.daily_rate ?? 0), 0)
+
 }
 
 const todayOnCallAmount = computed(() => onCallRateForDate(today))
 
 const monthOnCallAmount = computed(() => {
+
   let total = 0
+
   for (let day = 1; day <= lastDay; day++) {
+
     const date = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+
     if (date > today) break
+
     total += onCallRateForDate(date)
+
   }
+
   return total
+
 })
 
 /* =========================
 
    POINTAGES
 
-\\\========================= */
+\\\\\========================= */
 
 const validMonthPunches =
 
@@ -1119,17 +1175,27 @@ const todayPunches =
   })
 
 const todayAmount = computed(() => {
+
   const punchesTotal = todayPunches.value.reduce(
+
     (total, punch) => total + Number(punch.applied_rate ?? 0), 0
+
   )
+
   return punchesTotal + todayOnCallAmount.value
+
 })
 
 const monthAmount = computed(() => {
+
   const punchesTotal = validMonthPunches.value.reduce(
+
     (total, punch) => total + Number(punch.applied_rate ?? 0), 0
+
   )
+
   return punchesTotal + monthOnCallAmount.value
+
 })
 
 const getPunch = (
@@ -1328,7 +1394,7 @@ const punchTime = (
 
    CHARGEMENT
 
-\\\========================= */
+\\\\\========================= */
 
 const loadPunches = async () => {
 
@@ -1587,20 +1653,33 @@ const loadData = async () => {
     employee.id
 
   const { data: onCallData, error: onCallError } = await supabase
+
     .from('on_call_assignments')
+
     .select('id, employee_id, post_id, daily_rate, started_on, ended_on')
+
     .eq('employee_id', employee.id)
+
     .lte('started_on', today)
+
     .or(`ended_on.is.null,ended_on.gte.${monthStart}`)
 
   if (onCallError) {
+
     console.error(onCallError)
+
     onCallAssignments.value = []
+
   } else {
+
     onCallAssignments.value = (onCallData ?? []).map((a: any) => ({
+
       ...a,
+
       daily_rate: Number(a.daily_rate ?? 0),
+
     })) as OnCallAssignment[]
+
   }
 
   /*
@@ -1817,7 +1896,7 @@ const loadData = async () => {
 
    POINTER
 
-\\\========================= */
+\\\\\========================= */
 
 const punch = async (
 
@@ -1834,6 +1913,15 @@ const punch = async (
   const key =
 
     `${assignment.post.id}-${vacationType}`
+
+  if (
+    isPortSaintLouis(assignment) &&
+    !portSaintLouisSchedule.value
+  ) {
+    errorMessage.value =
+      'Port-Saint-Louis est prévu uniquement le mercredi et le dimanche.'
+    return
+  }
 
   if (
 
@@ -1973,11 +2061,15 @@ const punch = async (
 
   successMessage.value =
 
-    time
+    isPortSaintLouis(assignment)
 
-      ? `Pointage enregistré à ${time}.`
+      ? time
+        ? `Présence validée à ${time}.`
+        : 'Présence validée.'
 
-      : 'Pointage enregistré.'
+      : time
+        ? `Pointage enregistré à ${time}.`
+        : 'Pointage enregistré.'
 
 }
 
@@ -1985,7 +2077,7 @@ const punch = async (
 
    DÉMARRAGE
 
-\\\========================= */
+\\\\\========================= */
 
 onMounted(async () => {
 
@@ -2838,26 +2930,45 @@ onMounted(async () => {
 }
 
 .service-badge.on-call {
+
   border: 1px solid #4a90e2;
+
   background: #eef6ff;
+
   color: #2f6fb3;
+
 }
 
 .automatic-badge {
+
   min-width: 104px;
+
   height: 40px;
+
   flex-shrink: 0;
+
   display: inline-flex;
+
   align-items: center;
+
   justify-content: center;
+
   padding: 0 12px;
+
   border-radius: 14px;
+
   background: #17372f;
+
   color: #fff;
+
   font-size: 9px;
+
   font-weight: 800;
+
   line-height: 1;
+
   text-align: center;
+
 }
 
 </style>
