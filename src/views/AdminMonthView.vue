@@ -1281,7 +1281,7 @@ const loadMonth = async () => {
 
 
 
-    supabase.from('employees').select('\\*').order('first_name', { ascending: true }),
+    supabase.from('employees').select('*').order('first_name', { ascending: true }),
 
 
 
@@ -1743,6 +1743,10 @@ h2 { font-size: 21px; }
 
   .day-details { padding: 16px; }
 
+
+
 }
+
+
 
 </style>

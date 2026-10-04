@@ -2139,48 +2139,19 @@ const monthAmount = computed(() => {
 
 
 /* =========================
-
-
-
    RÉPARTITION PAR POSTE
-
-
-
 ========================= */
 
 
-
-
-
-
-
-const portSaintLouisHoursForDate = (date: string) => {
-  const day = new Date(`${date}T12:00:00`).getDay()
-  if (day === 3) return 2
-  if (day === 0) return 1
-  return 0
-}
-
-const portSaintLouisHoursForMonthPost = (postId: string) =>
-  validMonthPunches.value
-    .filter(punch => punch.post_id === postId)
-    .reduce((total, punch) => total + portSaintLouisHoursForDate(punch.work_date), 0)
-
 const postSummaries = computed(() => {
 
-
-
   return posts.value.map((post) => {
-
 
 
     if (post.service_type === 'on_call') {
 
 
-
       return { ...post, vacationCount: onCallSummary.value.days, amount: onCallSummary.value.amount }
-
-
 
     }
 
