@@ -1945,6 +1945,15 @@ const punch = async (
 
   }
 
+  if (
+  assignment.post.site_name === 'Sausset-les-Pins' &&
+  hasPunched(assignment.post.id, 'jour')
+) {
+  errorMessage.value =
+    'Tu as déjà pointé aujourd’hui pour Sausset.'
+  return
+}
+
   punchingKey.value = key
 
   const {
@@ -2969,6 +2978,6 @@ onMounted(async () => {
 
   text-align: center;
 
-}
+} 
 
 </style>

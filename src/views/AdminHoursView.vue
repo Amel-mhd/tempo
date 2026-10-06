@@ -1206,22 +1206,15 @@
               </div>
 
 
-              <div>
+              <div class="employee-amount-card">
+              <span>À PAYER</span>
 
+            <strong class="employee-amount-value">
+            {{ formatMoney(employee.totalAmount) }}
+            </strong>
 
-                <span>Montant</span>
-
-
-                <strong>
-
-
-                  {{ formatMoney(employee.totalAmount) }}
-
-
-                </strong>
-
-
-              </div>
+             <small>Total ce mois</small>
+            </div>
 
 
             </div>
@@ -1676,6 +1669,45 @@
 
             </article>
 
+            <!-- HEURES SUPPLÉMENTAIRES -->
+
+            <article
+              v-for="extraHour in employee.extraHours"
+              :key="`extra-hour-${extraHour.id}`"
+              class="punch-row extra-hour-row"
+            >
+              <div class="punch-top">
+                <div>
+                  <strong class="punch-date">
+                    {{ formatDate(extraHour.work_date) }}
+                  </strong>
+                  <span class="punch-post">Heures supplémentaires</span>
+                </div>
+
+                <span class="status-badge validated">Validé</span>
+              </div>
+
+              <div class="vacation-line">
+                <div class="vacation-name">
+                  <span class="vacation-icon">⏱️</span>
+                  <div>
+                    <span>Heures supplémentaires</span>
+                    <strong>
+                      {{ formatHours(extraHour.hours) }} × {{ formatMoney(extraHour.hourly_rate) }}/h
+                    </strong>
+                  </div>
+                </div>
+
+                <strong class="rate">
+                  {{ formatMoney(extraHour.amount) }}
+                </strong>
+              </div>
+
+              <div class="extra-hour-reason">
+                <span>Motif</span>
+                <strong>{{ extraHour.reason }}</strong>
+              </div>
+            </article>
 
           </div>
 
@@ -4562,10 +4594,13 @@ const employeeSummaries =
         }
 
 
+        const extraHoursCount = employeeExtraHours.reduce(
+          (sum, item) => sum + Number(item.hours ?? 0),
+          0
+        )
+
         let monthLabel =
-
-
-          `${normalPunches.length} vac.`
+          `${normalPunches.length} vac.${extraHoursCount > 0 ? ` + ${formatHours(extraHoursCount)} sup.` : ''}`
 
 
         if (
@@ -8246,5 +8281,115 @@ h1 {
     grid-template-columns: 1fr;
   }
 }
+
+
+
+.extra-hour-row {
+  border-color: #d8e6de;
+  background: #f5f9f7;
+}
+
+.extra-hour-reason {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e7eeea;
+}
+
+.extra-hour-reason span {
+  display: block;
+  color: #9b938d;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.extra-hour-reason strong {
+  display: block;
+  margin-top: 3px;
+  color: #17372f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* =========================
+   MONTANT À PAYER
+   ========================= */
+
+/* MONTANT À PAYER */
+
+.employee-stats .employee-amount-card {
+  background: #173f37 !important;
+  border: 1px solid #173f37 !important;
+  border-radius: 14px;
+  padding: 10px 13px;
+  min-width: 110px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(23, 63, 55, 0.22);
+}
+
+.employee-amount-card span {
+  color: #cfe2dc;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.employee-amount-card .employee-amount-value {
+  margin-top: 3px;
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: 800 !important;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.employee-amount-card small {
+  margin-top: 3px;
+  color: #d9e8e3;
+  font-size: 8px;
+  font-weight: 500;
+}
+
+.employee-stats > div:not(.employee-amount-card) {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+/* Aujourd'hui / Ce mois */
+.employee-stats > div:not(.employee-amount-card) span {
+  font-size: 9px !important;
+  text-align: left;
+}
+
+/* 1 vac. / 6 vac. */
+.employee-stats > div:not(.employee-amount-card) strong {
+  width: 100%;
+  margin-top: 7px;
+  text-align: center;
+
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #17372f;
+}
+.employee-stats > div:not(.employee-amount-card) span {
+  font-size: 10px !important;
+}
+
+.employee-stats > div:not(.employee-amount-card) strong {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
 
 </style>
