@@ -564,16 +564,10 @@
 
                 <div class="shift-info">
                   <template v-if="isPortSaintLouis(assignment)">
-                    <span>Présence ménage</span>
-                    <strong v-if="portSaintLouisSchedule">
-                      {{ portSaintLouisSchedule.hours }} h prévues
-                    </strong>
-                    <strong v-else>
-                      Aucune intervention aujourd’hui
-                    </strong>
-                    <small v-if="portSaintLouisSchedule">
-                      15,00 € / heure · {{ formatMoney(portSaintLouisSchedule.amount) }}
-                    </small>
+                    <span>Vacation ménage</span>
+                    <strong v-if="portSaintLouisSchedule">Ménage</strong>
+                    <strong v-else>Pas de vacation aujourd’hui</strong>
+                    <small v-if="portSaintLouisSchedule">45,00 € par vacation</small>
                   </template>
 
                   <template v-else>
@@ -588,7 +582,7 @@
                   <small v-if="getPunch(assignment.post.id, 'jour')">
                     {{
                       isPortSaintLouis(assignment)
-                        ? 'Présence validée à :'
+                        ? 'Pointé à :'
                         : 'Dernier pointage aujourd’hui :'
                     }}
                     {{
@@ -608,7 +602,7 @@
                   v-if="isPortSaintLouis(assignment) && getPunch(assignment.post.id, 'jour')"
                   class="punched-state"
                 >
-                  <span>✓ Présence validée</span>
+                  <span>✓ Pointé</span>
                 </div>
 
                 <button
@@ -623,10 +617,10 @@
                 >
                   {{
                     !portSaintLouisSchedule
-                      ? 'Disponible mercredi et dimanche'
+                      ? 'Disponible mercredi'
                       : punchingKey === `${assignment.post.id}-jour`
-                        ? 'Validation...'
-                        : 'Valider ma présence'
+                        ? 'Pointage...'
+                        : 'Pointer'
                   }}
                 </button>
 
@@ -1092,12 +1086,12 @@ const isPortSaintLouis = (assignment: Assignment) =>
   assignment.post.site_name === 'Port-Saint-Louis'
 
 const portSaintLouisSchedule = computed(() => {
-  const day = now.getDay()
+  const weekday = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    timeZone: 'Europe/Paris',
+  }).format(new Date())
 
-  if (day === 3) return { hours: 2, hourlyRate: 15, amount: 30 }
-  if (day === 0) return { hours: 1, hourlyRate: 15, amount: 15 }
-
-  return null
+  return weekday === 'Wed' ? { amount: 45 } : null
 })
 
 const displayedRate = (assignment: Assignment) => {
@@ -1919,7 +1913,12 @@ const punch = async (
     !portSaintLouisSchedule.value
   ) {
     errorMessage.value =
-      'Port-Saint-Louis est prévu uniquement le mercredi et le dimanche.'
+      'Port-Saint-Louis est disponible uniquement le mercredi.'
+    return
+  }
+
+  if (isPortSaintLouis(assignment) && hasPunched(assignment.post.id, 'jour')) {
+    errorMessage.value = 'Cette vacation a déjà été pointée.'
     return
   }
 
@@ -2073,8 +2072,8 @@ const punch = async (
     isPortSaintLouis(assignment)
 
       ? time
-        ? `Présence validée à ${time}.`
-        : 'Présence validée.'
+        ? `Pointage enregistré à ${time}.`
+        : 'Pointage enregistré.'
 
       : time
         ? `Pointage enregistré à ${time}.`
