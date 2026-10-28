@@ -206,7 +206,7 @@
 
               <div class="base-rate">
 
-                {{ isPortSaintLouisPost(post) ? '15,00 € / h' : formatMoney(post.base_rate) }}
+                {{ isPortSaintLouisPost(post) ? '45,00 € / vacation' : formatMoney(post.base_rate) }}
 
               </div>
 
@@ -254,7 +254,7 @@
 
                 Laissez vide pour utiliser
 
-                {{ isPortSaintLouisPost(post) ? '15,00 € / h' : formatMoney(post.base_rate) }}.
+                {{ isPortSaintLouisPost(post) ? '45,00 € / vacation' : formatMoney(post.base_rate) }}.
 
               </small>
 
@@ -536,7 +536,7 @@
 
                 <b>
 
-                  {{ isPortSaintLouisPost(assignment.post) ? '15,00 € / h' : formatMoney(assignment.custom_rate ?? assignment.post.base_rate) }}
+                  {{ isPortSaintLouisPost(assignment.post) ? '45,00 € / vacation' : formatMoney(assignment.custom_rate ?? assignment.post.base_rate) }}
 
                 </b>
 
@@ -738,7 +738,7 @@
 
                       <div class="base-rate">
 
-                        {{ isPortSaintLouisPost(post) ? '15,00 € / h' : formatMoney(post.base_rate) }}
+                        {{ isPortSaintLouisPost(post) ? '45,00 € / vacation' : formatMoney(post.base_rate) }}
 
                       </div>
 
@@ -792,7 +792,7 @@
 
                         Tarif normal :
 
-                        {{ isPortSaintLouisPost(post) ? '15,00 € / h' : formatMoney(post.base_rate) }}
+                        {{ isPortSaintLouisPost(post) ? '45,00 € / vacation' : formatMoney(post.base_rate) }}
 
                       </small>
 
@@ -1003,7 +1003,7 @@ const isPortSaintLouisPost = (post: Post) =>
   post.site_name === 'Port-Saint-Louis'
 
 const postScheduleLabel = (post: Post) => {
-  if (isPortSaintLouisPost(post)) return '15 € / heure • Mercredi 2 h • Dimanche 1 h'
+  if (isPortSaintLouisPost(post)) return '1 vacation le mercredi · 45 €'
   if (post.service_type === 'security') return 'Midi 11h45 • Soir 18h45'
   if (post.service_type === 'on_call') return '40 € / jour • automatique'
   return '1 vacation par jour'

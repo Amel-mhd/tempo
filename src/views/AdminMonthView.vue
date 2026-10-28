@@ -66,7 +66,7 @@
                 <strong>{{ item.firstName }}</strong>
                 <span v-if="item.isOnCall">Journée d'astreinte</span>
                 <span v-else-if="item.punch && isPortSaintLouisPunch(item.punch)">
-                  {{ portSaintLouisHours(item.punch.work_date) }} h × 15 €/h · Présence validée à {{ formatPunchTime(item.punch.punched_at) }}
+                  Vacation ménage · Pointé à {{ formatPunchTime(item.punch.punched_at) }}
                 </span>
                 <span v-else-if="item.punch">
                   {{ vacationLabel(item.punch.vacation_type) }} · Pointé à {{ formatPunchTime(item.punch.punched_at) }}
@@ -279,12 +279,6 @@ const postForPunch = (punch: Punch) =>
   posts.value.find(item => item.id === punch.post_id)
 const isPortSaintLouisPunch = (punch: Punch) =>
   postForPunch(punch)?.site_name === 'Port-Saint-Louis'
-const portSaintLouisHours = (date: string) => {
-  const day = new Date(`${date}T12:00:00`).getDay()
-  if (day === 3) return 2
-  if (day === 0) return 1
-  return 0
-}
 const vacationLabel = (type: string) => {
   if (type === 'midi') return 'Vacation midi'
   if (type === 'soir') return 'Vacation soir'

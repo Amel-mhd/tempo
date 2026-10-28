@@ -454,15 +454,13 @@
           <div>
 
 
-            <span>{{ isPortSaintLouisPost(selectedNewPost) ? 'Présence' : 'Vacation' }}</span>
+            <span>Vacation</span>
 
 
             <strong>
               {{
                 isPortSaintLouisPost(selectedNewPost)
-                  ? (portSaintLouisHoursForDate(newWorkDate)
-                      ? `${portSaintLouisHoursForDate(newWorkDate)} h × 15 €/h`
-                      : 'Port-Saint-Louis · mercredi ou dimanche')
+                   ? 'Journée · Ménage'
                   : 'Journée · Ménage'
               }}
             </strong>
@@ -2721,20 +2719,14 @@ const effectiveRate = (
 const isPortSaintLouisPost = (post: Post | null | undefined) =>
   post?.site_name === 'Port-Saint-Louis'
 
-const portSaintLouisHoursForDate = (date: string) => {
-  const day = new Date(`${date}T12:00:00`).getDay()
-  if (day === 3) return 2
-  if (day === 0) return 1
-  return 0
+const portSaintLouisAmountForDate = (date: string) => {
+  if (!date) return 0
+  return new Date(`${date}T12:00:00`).getDay() === 3 ? 45 : 0
 }
 
-const portSaintLouisAmountForDate = (date: string) =>
-  portSaintLouisHoursForDate(date) * 15
-
 const punchDurationLabel = (punch: Punch) => {
-  if (!isPortSaintLouisPost(punch.post)) return vacationLabel(punch.vacation_type)
-  const hours = portSaintLouisHoursForDate(punch.work_date)
-  return hours ? `${hours} h × 15 €/h` : 'Présence Port-Saint-Louis'
+  if (isPortSaintLouisPost(punch.post)) return 'Vacation ménage'
+  return vacationLabel(punch.vacation_type)
 }
 
 
@@ -3090,7 +3082,7 @@ const addVacation = async () => {
 
   if (isPortSaintLouisPost(post) && rate === 0) {
     addVacationError.value =
-      'Port-Saint-Louis est prévu uniquement le mercredi et le dimanche.'
+      'Port-Saint-Louis est prévu uniquement le mercredi.'
     return
   }
 
